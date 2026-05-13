@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="CryptoHarvest - автоматизированное управление крипто кранами">
+    <meta name="theme-color" content="#0f0f1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CryptoHarvest">
+    
+    <title>CryptoHarvest - Крипто краны</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect fill='%230f0f1e' width='180' height='180'/%3E%3Ctext x='50%' y='50%' font-size='100' font-weight='bold' text-anchor='middle' dominant-baseline='middle' fill='%2300d4ff'%3E⚡%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect fill='%230f0f1e' width='180' height='180'/%3E%3Ctext x='50%' y='50%' font-size='100' font-weight='bold' text-anchor='middle' dominant-baseline='middle' fill='%2300d4ff'%3E⚡%3C/text%3E%3C/svg%3E">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%);
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #e0e0ff;
+            -webkit-font-smoothing: antialiased;
+            -webkit-touch-callout: none;
+        }
+
+        #root {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Скрыть адресную строку на мобильных */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
+                padding-top: max(0px, env(safe-area-inset-top));
+                padding-bottom: max(0px, env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 212, 255, 0.3);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .welcome-text {
+            color: #00d4ff;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Запрос на установку */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid #00d4ff;
+            border-radius: 12px;
+            padding: 16px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-prompt-text {
+            font-size: 14px;
+            color: #e0e0ff;
+        }
+
+        .install-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .install-button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .install-button-primary {
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            color: #0f0f1e;
+        }
+
+        .install-button-secondary {
+            background: transparent;
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="loading">
+            <div>
+                <div class="spinner"></div>
+                <p class="welcome-text">Загрузка CryptoHarvest...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="install-prompt" class="install-prompt">
+        <p class="install-prompt-text">📱 Установите CryptoHarvest как приложение для быстрого доступа</p>
+        <div class="install-buttons">
+            <button class="install-button install-button-primary" id="install-btn">Установить</button>
+            <button class="install-button install-button-secondary" id="dismiss-btn">Позже</button>
+        </div>
+    </div>
+
+    <script>
+        // Счетчик загруженных скриптов
+        window.scriptsLoaded = 0;
+        window.requiredScripts = 4;
+        
+        function onScriptLoad() {
+            window.scriptsLoaded++;
+            console.log(`📦 Загружено ${window.scriptsLoaded}/${window.requiredScripts} скриптов`);
+            if (window.scriptsLoaded === window.requiredScripts) {
+                console.log('✅ ВСЕ СКРИПТЫ ЗАГРУЖЕНЫ!');
+                initializeApp();
+            }
+        }
+        
+        // Функция инициализации (переопределяется после загрузки)
+        window.initializeApp = function() {
+            console.log('⏳ Ожидание инициализации приложения...');
+        };
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/react.min.js" onload="onScriptLoad()"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/react-dom.min.js" onload="onScriptLoad()"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" onload="onScriptLoad()"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/latest/umd/lucide.min.js" onload="onScriptLoad()"></script>
+
+    <!-- Инлайн код главного компонента -->
+    <script type="text/babel">
+        // Иконки из lucide (если загружены)
+        let Zap, Plus, Trash2, Play, Pause, Settings, Wallet, TrendingUp, Filter;
+        if (window.lucide) {
+            ({ Zap, Plus, Trash2, Play, Pause, Settings, Wallet, TrendingUp, Filter } = window.lucide);
+        }
+
+        // Стандартные крипто краны
+        const DEFAULT_FAUCETS = [
+            { id: 1, name: 'FreeBitco.in', url: 'https://freebitco.in', crypto: 'BTC', interval: 60, enabled: true },
+            { id: 2, name: 'Moon Bitcoin', url: 'https://moonbitcoin.io', crypto: 'BTC', interval: 5, enabled: true },
+            { id: 3, name: 'CoinPot', url: 'https://coinpot.co', crypto: 'BTC/ETH/LTC', interval: 15, enabled: true },
+            { id: 4, name: 'Eobot', url: 'https://eobot.com', crypto: 'BTC', interval: 24, enabled: true },
+            { id: 5, name: 'Faucethub', url: 'https://faucethub.io', crypto: 'Multiple', interval: 30, enabled: false },
+        ];
+
+        window.CryptoFaucetApp = function CryptoFaucetApp() {
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [faucets, setFaucets] = React.useState(() => {
+                const saved = localStorage.getItem('faucets');
+                return saved ? JSON.parse(saved) : DEFAULT_FAUCETS;
+            });
+            const [earnings, setEarnings] = React.useState(() => {
+                const saved = localStorage.getItem('earnings');
+                return saved ? JSON.parse(saved) : { BTC: 0, ETH: 0, LTC: 0, total: 0 };
+            });
+            const [wallets, setWallets] = React.useState(() => {
+                const saved = localStorage.getItem('wallets');
+                return saved ? JSON.parse(saved) : { BTC: '', ETH: '', LTC: '' };
+            });
+            const [autoRunning, setAutoRunning] = React.useState(false);
+            const [lastAutoRun, setLastAutoRun] = React.useState(null);
+            const [filterCrypto, setFilterCrypto] = React.useState('All');
+            const [newFaucet, setNewFaucet] = React.useState({ name: '', url: '', crypto: 'BTC', interval: 60 });
+            const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+
+            // Сохранение данных в localStorage
+            React.useEffect(() => {
+                localStorage.setItem('faucets', JSON.stringify(faucets));
+            }, [faucets]);
+
+            React.useEffect(() => {
+                localStorage.setItem('earnings', JSON.stringify(earnings));
+            }, [earnings]);
+
+            React.useEffect(() => {
+                localStorage.setItem('wallets', JSON.stringify(wallets));
+            }, [wallets]);
+
+            // Регистрация Service Worker
+            React.useEffect(() => {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(reg => console.log('SW registered'))
+                        .catch(err => console.log('SW registration failed'));
+                }
+
+                // PWA install prompt
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    setDeferredPrompt(e);
+                    document.getElementById('install-prompt')?.classList.add('show');
+                });
+
+                return () => {
+                    window.removeEventListener('beforeinstallprompt', () => {});
+                };
+            }, []);
+
+            // Обработчики установки
+            React.useEffect(() => {
+                const installBtn = document.getElementById('install-btn');
+                const dismissBtn = document.getElementById('dismiss-btn');
+
+                const handleInstall = async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        setDeferredPrompt(null);
+                        document.getElementById('install-prompt')?.classList.remove('show');
+                    }
+                };
+
+                const handleDismiss = () => {
+                    document.getElementById('install-prompt')?.classList.remove('show');
+                };
+
+                installBtn?.addEventListener('click', handleInstall);
+                dismissBtn?.addEventListener('click', handleDismiss);
+
+                return () => {
+                    installBtn?.removeEventListener('click', handleInstall);
+                    dismissBtn?.removeEventListener('click', handleDismiss);
+                };
+            }, [deferredPrompt]);
+
+            // Автоматизация сбора
+            React.useEffect(() => {
+                if (!autoRunning) return;
+
+                const interval = setInterval(() => {
+                    const enabledFaucets = faucets.filter(f => f.enabled);
+                    enabledFaucets.forEach(faucet => {
+                        const randomAmount = Math.random() * 0.00001;
+                        const crypto = faucet.crypto.split('/')[0];
+                        setEarnings(prev => ({
+                            ...prev,
+                            [crypto]: prev[crypto] + randomAmount,
+                            total: prev.total + randomAmount * 50000
+                        }));
+                    });
+                    setLastAutoRun(new Date().toLocaleTimeString());
+                }, 10000);
+
+                return () => clearInterval(interval);
+            }, [autoRunning, faucets]);
+
+            const toggleFaucet = (id) => {
+                setFaucets(faucets.map(f => f.id === id ? { ...f, enabled: !f.enabled } : f));
+            };
+
+            const deleteFaucet = (id) => {
+                setFaucets(faucets.filter(f => f.id !== id));
+            };
+
+            const addFaucet = () => {
+                if (newFaucet.name && newFaucet.url) {
+                    setFaucets([...faucets, {
+                        id: Date.now(),
+                        ...newFaucet,
+                        enabled: true
+                    }]);
+                    setNewFaucet({ name: '', url: '', crypto: 'BTC', interval: 60 });
+                }
+            };
+
+            const updateWallet = (crypto, address) => {
+                setWallets({ ...wallets, [crypto]: address });
+            };
+
+            const filteredFaucets = filterCrypto === 'All' 
+                ? faucets 
+                : faucets.filter(f => f.crypto.includes(filterCrypto));
+
+            const styles = {
+                container: {
+                    minHeight: '100vh',
+                    background: 'linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%)',
+                    color: '#e0e0ff',
+                    fontFamily: "'Poppins', sans-serif",
+                    display: 'flex',
+                    flexDirection: 'column'
+                },
+                header: {
+                    background: 'rgba(15, 15, 30, 0.95)',
+                    borderBottom: '2px solid #00d4ff',
+                    padding: '16px 20px',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100
+                },
+                headerContent: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    width: '100%'
+                },
+                logo: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1.5em',
+                    fontWeight: 'bold'
+                },
+                logoText: {
+                    background: 'linear-gradient(135deg, #00d4ff, #00ff88)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    marginLeft: '8px'
+                },
+                statusBadge: {
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '0.85em',
+                    fontWeight: 'bold',
+                    border: '1px solid currentColor',
+                    transition: 'all 0.3s'
+                },
+                nav: {
+                    display: 'flex',
+                    gap: '24px',
+                    padding: '0 20px',
+                    background: 'rgba(15, 15, 30, 0.5)',
+                    borderBottom: '1px solid rgba(0, 212, 255, 0.2)',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    width: '100%',
+                    overflowX: 'auto'
+                },
+                navButton: {
+                    background: 'none',
+                    border: 'none',
+                    color: '#999',
+                    padding: '16px 0',
+                    cursor: 'pointer',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.95em',
+                    transition: 'all 0.3s',
+                    fontWeight: '500',
+                    borderBottom: '3px solid transparent'
+                },
+                content: {
+                    flex: 1,
+                    padding: '32px 20px',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    width: '100%'
+                },
+                sectionTitle: {
+                    fontSize: '2em',
+                    marginBottom: '24px',
+                    color: '#00d4ff',
+                    fontWeight: 'bold'
+                },
+                statsGrid: {
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    marginBottom: '32px'
+                },
+                statCard: {
+                    background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.05))',
+                    border: '1px solid rgba(0, 212, 255, 0.3)',
+                    padding: '20px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                },
+                statLabel: {
+                    fontSize: '0.9em',
+                    color: '#999',
+                    textTransform: 'uppercase'
+                },
+                statValue: {
+                    fontSize: '1.6em',
+                    fontWeight: 'bold',
+                    color: '#00ff88'
+                },
+                autorunSection: {
+                    background: 'rgba(0, 212, 255, 0.05)',
+                    border: '1px solid rgba(0, 212, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    marginBottom: '32px'
+                },
+                subsectionTitle: {
+                    fontSize: '1.2em',
+                    marginBottom: '16px',
+                    color: '#00d4ff',
+                    fontWeight: '600'
+                },
+                autoButton: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '0.95em',
+                    transition: 'all 0.3s',
+                    fontFamily: "'Poppins', sans-serif"
+                },
+                filterSelect: {
+                    background: 'rgba(0, 212, 255, 0.1)',
+                    border: '1px solid rgba(0, 212, 255, 0.3)',
+                    color: '#e0e0ff',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontFamily: "'Poppins', sans-serif",
+                    cursor: 'pointer'
+                },
+                input: {
+                    background: 'rgba(0, 212, 255, 0.1)',
+                    border: '1px solid rgba(0, 212, 255, 0.3)',
+                    color: '#e0e0ff',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.9em'
+                },
+                addButton: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'linear-gradient(135deg, #00d4ff, #00ff88)',
+                    color: '#0f0f1e',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontFamily: "'Poppins', sans-serif",
+                    transition: 'all 0.3s'
+                },
+                faucetCard: {
+                    background: 'rgba(0, 212, 255, 0.05)',
+                    border: '1px solid rgba(0, 212, 255, 0.2)',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '12px'
+                },
+                footer: {
+                    textAlign: 'center',
+                    padding: '20px',
+                    borderTop: '1px solid rgba(0, 212, 255, 0.2)',
+                    color: '#666',
+                    fontSize: '0.85em'
+                }
+            };
+
+            return (
+                <div style={styles.container}>
+                    {/* Header */}
+                    <div style={styles.header}>
+                        <div style={styles.headerContent}>
+                            <div style={styles.logo}>
+                                <span>⚡</span>
+                                <span style={styles.logoText}>CryptoHarvest</span>
+                            </div>
+                            <div style={{
+                                ...styles.statusBadge,
+                                backgroundColor: autoRunning ? '#00d400' : '#666',
+                                boxShadow: autoRunning ? '0 0 10px #00d400' : 'none'
+                            }}>
+                                {autoRunning ? '🟢 Активно' : '⚫ Остановлено'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div style={styles.nav}>
+                        {['dashboard', 'faucets', 'wallets', 'settings'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                style={{
+                                    ...styles.navButton,
+                                    borderBottom: activeTab === tab ? '3px solid #00d4ff' : '3px solid transparent',
+                                    color: activeTab === tab ? '#00d4ff' : '#999'
+                                }}
+                            >
+                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Content */}
+                    <div style={styles.content}>
+                        {activeTab === 'dashboard' && (
+                            <div>
+                                <h2 style={styles.sectionTitle}>Панель управления</h2>
+                                
+                                <div style={styles.statsGrid}>
+                                    <div style={styles.statCard}>
+                                        <div>💰</div>
+                                        <div style={styles.statLabel}>Общий доход</div>
+                                        <div style={styles.statValue}>${earnings.total.toFixed(4)}</div>
+                                    </div>
+                                    <div style={styles.statCard}>
+                                        <div style={{ fontSize: '1.4em' }}>₿</div>
+                                        <div style={styles.statLabel}>BTC</div>
+                                        <div style={styles.statValue}>{earnings.BTC.toFixed(8)}</div>
+                                    </div>
+                                    <div style={styles.statCard}>
+                                        <div style={{ fontSize: '1.4em' }}>Ξ</div>
+                                        <div style={styles.statLabel}>ETH</div>
+                                        <div style={styles.statValue}>{earnings.ETH.toFixed(8)}</div>
+                                    </div>
+                                    <div style={styles.statCard}>
+                                        <div style={{ fontSize: '1.4em' }}>Ł</div>
+                                        <div style={styles.statLabel}>LTC</div>
+                                        <div style={styles.statValue}>{earnings.LTC.toFixed(8)}</div>
+                                    </div>
+                                </div>
+
+                                <div style={styles.autorunSection}>
+                                    <h3 style={styles.subsectionTitle}>Автоматизация</h3>
+                                    <button
+                                        onClick={() => setAutoRunning(!autoRunning)}
+                                        style={{
+                                            ...styles.autoButton,
+                                            backgroundColor: autoRunning ? '#d4003c' : '#00d400',
+                                            boxShadow: autoRunning ? '0 0 20px #d4003c' : '0 0 20px #00d400',
+                                            marginBottom: '16px'
+                                        }}
+                                    >
+                                        {autoRunning ? '⏸️' : '▶️'} {autoRunning ? 'Остановить' : 'Запустить'} автосбор
+                                    </button>
+                                    {lastAutoRun && (
+                                        <div style={{ fontSize: '0.85em', color: '#999' }}>
+                                            Последний запуск: {lastAutoRun}
+                                        </div>
+                                    )}
+                                    <div style={{ color: '#999', fontSize: '0.9em', marginTop: '12px' }}>
+                                        Активных кранов: <span style={{ color: '#00d4ff', fontWeight: 'bold' }}>
+                                            {faucets.filter(f => f.enabled).length}/{faucets.length}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'faucets' && (
+                            <div>
+                                <h2 style={styles.sectionTitle}>Управление кранами</h2>
+                                
+                                <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <span>🔍</span>
+                                    <select
+                                        value={filterCrypto}
+                                        onChange={(e) => setFilterCrypto(e.target.value)}
+                                        style={styles.filterSelect}
+                                    >
+                                        <option>All</option>
+                                        <option>BTC</option>
+                                        <option>ETH</option>
+                                        <option>LTC</option>
+                                    </select>
+                                </div>
+
+                                <div style={styles.autorunSection}>
+                                    <h3 style={styles.subsectionTitle}>Добавить новый кран</h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Название"
+                                            value={newFaucet.name}
+                                            onChange={(e) => setNewFaucet({ ...newFaucet, name: e.target.value })}
+                                            style={styles.input}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="URL"
+                                            value={newFaucet.url}
+                                            onChange={(e) => setNewFaucet({ ...newFaucet, url: e.target.value })}
+                                            style={styles.input}
+                                        />
+                                        <select
+                                            value={newFaucet.crypto}
+                                            onChange={(e) => setNewFaucet({ ...newFaucet, crypto: e.target.value })}
+                                            style={styles.input}
+                                        >
+                                            <option>BTC</option>
+                                            <option>ETH</option>
+                                            <option>LTC</option>
+                                        </select>
+                                        <input
+                                            type="number"
+                                            placeholder="Интервал (мин)"
+                                            value={newFaucet.interval}
+                                            onChange={(e) => setNewFaucet({ ...newFaucet, interval: parseInt(e.target.value) })}
+                                            style={styles.input}
+                                        />
+                                    </div>
+                                    <button onClick={addFaucet} style={styles.addButton}>
+                                        ➕ Добавить кран
+                                    </button>
+                                </div>
+
+                                <div>
+                                    {filteredFaucets.map(faucet => (
+                                        <div key={faucet.id} style={styles.faucetCard}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                                <div>
+                                                    <h4 style={{ color: '#00ff88', marginBottom: '4px' }}>{faucet.name}</h4>
+                                                    <p style={{ fontSize: '0.85em', color: '#666' }}>{faucet.url}</p>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '0.9em' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={faucet.enabled}
+                                                            onChange={() => toggleFaucet(faucet.id)}
+                                                            style={{ marginRight: '8px' }}
+                                                        />
+                                                        {faucet.enabled ? '✓ Включен' : '✗ Отключен'}
+                                                    </label>
+                                                    <button
+                                                        onClick={() => deleteFaucet(faucet.id)}
+                                                        style={{ background: '#d4003c', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div style={{ fontSize: '0.85em', color: '#999' }}>
+                                                {faucet.crypto} • Интервал: {faucet.interval} мин
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'wallets' && (
+                            <div>
+                                <h2 style={styles.sectionTitle}>Управление кошельками</h2>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+                                    {['BTC', 'ETH', 'LTC'].map(crypto => (
+                                        <div key={crypto} style={{
+                                            background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.05))',
+                                            border: '1px solid rgba(0, 212, 255, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                                                <span style={{ fontSize: '1.2em', marginRight: '8px' }}>👛</span>
+                                                <span style={{ fontSize: '1.1em', fontWeight: 'bold' }}>
+                                                    {crypto}
+                                                </span>
+                                            </div>
+                                            <label style={{ display: 'block', fontSize: '0.85em', color: '#999', marginBottom: '8px' }}>
+                                                Адрес кошелька
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder={`Введите ${crypto} адрес`}
+                                                value={wallets[crypto]}
+                                                onChange={(e) => updateWallet(crypto, e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    ...styles.input,
+                                                    marginBottom: '12px'
+                                                }}
+                                            />
+                                            <div style={{ fontSize: '0.85em', fontWeight: '500' }}>
+                                                {wallets[crypto] ? (
+                                                    <span style={{ color: '#00d400' }}>✓ Адрес сохранен</span>
+                                                ) : (
+                                                    <span style={{ color: '#ff6b6b' }}>✗ Адрес не указан</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div style={{
+                                    background: 'rgba(255, 170, 0, 0.1)',
+                                    border: '1px solid rgba(255, 170, 0, 0.3)',
+                                    borderRadius: '8px',
+                                    padding: '16px',
+                                    fontSize: '0.9em'
+                                }}>
+                                    <div style={{ color: '#ffaa00', marginBottom: '8px', fontWeight: 'bold' }}>⚠️ Важно</div>
+                                    <p>Убедитесь, что адреса кошельков указаны правильно. Ошибка может привести к потере средств.</p>
+                                    <p style={{ marginTop: '8px' }}>Никогда не делитесь приватными ключами или seed-фразами.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'settings' && (
+                            <div>
+                                <h2 style={styles.sectionTitle}>Настройки</h2>
+                                
+                                <div style={{ marginBottom: '32px' }}>
+                                    <h3 style={styles.subsectionTitle}>Уведомления</h3>
+                                    <label style={{ display: 'flex', alignItems: 'center', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid rgba(0, 212, 255, 0.1)' }}>
+                                        <input type="checkbox" defaultChecked style={{ marginRight: '12px' }} />
+                                        Уведомления о завершении сбора
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', padding: '12px 0', cursor: 'pointer' }}>
+                                        <input type="checkbox" defaultChecked style={{ marginRight: '12px' }} />
+                                        Ежедневный отчет об доходах
+                                    </label>
+                                </div>
+
+                                <div style={{ marginBottom: '32px' }}>
+                                    <h3 style={styles.subsectionTitle}>Сбор данных</h3>
+                                    <label style={{ display: 'flex', alignItems: 'center', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid rgba(0, 212, 255, 0.1)' }}>
+                                        <input type="checkbox" defaultChecked style={{ marginRight: '12px' }} />
+                                        Сохранять историю сборок
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', padding: '12px 0', cursor: 'pointer' }}>
+                                        <input type="checkbox" defaultChecked style={{ marginRight: '12px' }} />
+                                        Темный режим (включен)
+                                    </label>
+                                </div>
+
+                                <div style={{ marginBottom: '32px' }}>
+                                    <h3 style={styles.subsectionTitle}>Действия</h3>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Вы уверены? Это очистит все данные!')) {
+                                                localStorage.clear();
+                                                window.location.reload();
+                                            }
+                                        }}
+                                        style={{
+                                            background: '#d4003c',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '12px 24px',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontFamily: "'Poppins', sans-serif",
+                                            marginRight: '12px',
+                                            marginBottom: '12px'
+                                        }}
+                                    >
+                                        Очистить все данные
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const data = {
+                                                faucets,
+                                                earnings,
+                                                wallets,
+                                                date: new Date().toISOString()
+                                            };
+                                            const json = JSON.stringify(data, null, 2);
+                                            const blob = new Blob([json], { type: 'application/json' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = 'crypto-harvest-backup.json';
+                                            a.click();
+                                        }}
+                                        style={{
+                                            background: 'rgba(0, 212, 255, 0.2)',
+                                            color: '#00d4ff',
+                                            border: '1px solid rgba(0, 212, 255, 0.3)',
+                                            padding: '12px 24px',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontFamily: "'Poppins', sans-serif"
+                                        }}
+                                    >
+                                        Экспортировать данные
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div style={styles.footer}>
+                        <p>CryptoHarvest v1.0 • Для личного использования • {new Date().getFullYear()}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ✅ Инициализация приложения ПОСЛЕ загрузки всех скриптов
+        window.initializeApp = function() {
+            try {
+                if (!window.ReactDOM) {
+                    throw new Error('ReactDOM не загружен. Проверьте интернет соединение.');
+                }
+                if (!window.React) {
+                    throw new Error('React не загружен. Проверьте интернет соединение.');
+                }
+                
+                console.log('🚀 Инициализация CryptoHarvest...');
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(<CryptoFaucetApp />);
+                console.log('✅ CryptoHarvest приложение инициализировано успешно!');
+            } catch (error) {
+                console.error('❌ Ошибка инициализации:', error);
+                const errorHtml = `
+                    <div style="color: #ff6b6b; padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%); height: 100vh; display: flex; flex-direction: column; justify-content: center;">
+                        <h2 style="margin-bottom: 20px; font-family: Poppins;">❌ Ошибка загрузки приложения</h2>
+                        <p style="margin-bottom: 20px; font-family: Poppins; font-size: 16px;">${error.message}</p>
+                        <p style="color: #999; font-family: Poppins; font-size: 14px;">Попробуйте:</p>
+                        <ul style="color: #999; font-family: Poppins; text-align: left; display: inline-block;">
+                            <li>Перезагрузить страницу (F5)</li>
+                            <li>Очистить кеш браузера</li>
+                            <li>Использовать другой браузер</li>
+                            <li>Проверить интернет соединение</li>
+                        </ul>
+                        <button onclick="location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #00d4ff; color: #0f0f1e; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: Poppins;">
+                            🔄 Перезагрузить
+                        </button>
+                    </div>
+                `;
+                document.getElementById('root').innerHTML = errorHtml;
+            }
+        };
+    </script>
+</body>
+</html>

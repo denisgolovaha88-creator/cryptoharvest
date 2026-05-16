@@ -1,0 +1,17 @@
+{
+  "name": "cryptoharvest-bot",
+  "version": "4.0.0",
+  "description": "CryptoHarvest Telegram Bot — BTC+ETH+LTC+SOL",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f0f1e">
+<title>CryptoHarvest</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a18;color:#e0e0ff;overflow-x:hidden}
+:root{--c1:#00d4ff;--c2:#00ff88;--c3:#1a0a2e;--cr:#ff4466}
+
+/* ===AUTH=== */
+.auth{position:fixed;inset:0;background:linear-gradient(135deg,#0a0a18,#1a0033);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;padding:20px;gap:0}
+.auth-logo{font-size:4em;margin-bottom:4px;filter:drop-shadow(0 0 20px #00d4ff)}
+.auth-h{font-size:2em;font-weight:900;background:linear-gradient(135deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px}
+.auth-s{color:#444;font-size:.82em;margin-bottom:24px}
+.auth-box{width:100%;max-width:340px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:18px;padding:22px}
+.atabs{display:flex;background:rgba(0,0,0,.4);border-radius:8px;padding:3px;gap:3px;margin-bottom:18px}
+.atab{flex:1;padding:8px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.83em;font-weight:bold;background:none;color:#555;transition:all .2s}
+.atab.on{background:rgba(0,212,255,.18);color:#00d4ff}
+.aerr{color:#ff5566;font-size:.78em;text-align:center;margin-top:8px;min-height:16px}
+.av-row{display:flex;gap:7px;margin-bottom:12px}
+.av{width:40px;height:40px;font-size:1.25em;border-radius:50%;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);transition:all .2s}
+.av.on{border-color:#00d4ff;background:rgba(0,212,255,.15)}
+
+/* ===INSTALL BANNER=== */
+.install-banner{background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(0,255,136,.1));border:1px solid rgba(0,212,255,.3);border-radius:12px;padding:12px 14px;margin:12px 12px 0;display:none;align-items:center;justify-content:space-between;gap:10px}
+.install-banner.show{display:flex}
+
+/* ===LAYOUT=== */
+.hdr{background:rgba(10,10,24,.98);border-bottom:2px solid var(--c1);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;gap:8px}
+.logo{display:flex;align-items:center;font-size:1.2em;font-weight:bold;color:var(--c1);gap:6px;white-space:nowrap}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.nav{display:flex;background:rgba(10,10,24,.5);border-bottom:1px solid rgba(0,212,255,.12);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nav::-webkit-scrollbar{height:2px}.nav::-webkit-scrollbar-thumb{background:#00d4ff33}
+.nb{flex:1;background:none;border:none;color:#666;padding:11px 2px;cursor:pointer;font-size:.78em;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;min-width:56px}
+.nb.on{color:var(--c1);border-bottom-color:var(--c1);font-weight:bold}
+.pg{padding:14px 12px;max-width:740px;margin:0 auto}
+.sec{display:none}.sec.on{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ptitle{font-size:1.4em;margin-bottom:14px;color:var(--c1);font-weight:bold}
+
+/* ===STATS=== */
+.sg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px}
+.sg4{grid-template-columns:repeat(2,1fr)}
+.sc{background:linear-gradient(135deg,rgba(0,212,255,.09),rgba(0,255,136,.04));border:1px solid rgba(0,212,255,.22);padding:13px;border-radius:12px;transition:all .3s}
+.sc:hover{border-color:rgba(0,212,255,.4)}
+.sl{font-size:.7em;color:#666;text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px}
+.sv{font-size:1.3em;font-weight:bold;color:var(--c2);font-variant-numeric:tabular-nums}
+.su{font-size:.72em;color:#888;margin-top:2px}
+.sc.wide{grid-column:1/-1}
+
+/* ===BOX=== */
+.box{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.16);border-radius:12px;padding:14px;margin-bottom:12px}
+.bh{color:var(--c1);font-weight:bold;margin-bottom:11px;font-size:.9em;display:flex;align-items:center;gap:6px}
+
+/* ===BTNS=== */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:bold;font-size:.85em;transition:all .2s;white-space:nowrap}
+.btn:active{transform:scale(.95)}
+.bp{background:linear-gradient(135deg,#00d4ff,#00ff88);color:#0a0a18}
+.bd{background:#a00020;color:#fff}
+.bs{background:rgba(0,212,255,.1);color:#00d4ff;border:1px solid rgba(0,212,255,.22)}
+.bg{background:rgba(0,180,0,.13);color:#00cc00;border:1px solid rgba(0,180,0,.2)}
+.bo{background:rgba(255,140,0,.12);color:#ff9600;border:1px solid rgba(255,140,0,.18)}
+.bpurp{background:rgba(180,0,255,.15);color:#cc88ff;border:1px solid rgba(180,0,255,.2)}
+.bsm{padding:5px 10px;font-size:.76em}
+.bfull{width:100%;justify-content:center;margin-bottom:7px}
+
+/* ===FORM=== */
+.inp{width:100%;padding:9px 11px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.22);color:#e0e0ff;border-radius:8px;font-family:inherit;font-size:.86em;margin-bottom:8px;transition:all .2s}
+.inp:focus{outline:none;border-color:var(--c1);background:rgba(0,212,255,.12)}
+.inp::placeholder{color:#3a3a5a}
+select.inp option{background:#1a1a2e;color:#e0e0ff}
+.lbl{font-size:.76em;color:#777;margin-bottom:3px;display:block}
+.irow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.irow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* ===FAUCET TABLE=== */
+.ft{width:100%;border-collapse:collapse;margin-top:4px}
+.ft th{font-size:.72em;color:#666;text-align:left;padding:6px 8px;border-bottom:1px solid rgba(0,212,255,.1);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.ft td{padding:8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82em;vertical-align:middle}
+.ft tr:hover td{background:rgba(0,212,255,.03)}
+.ft tr.ready td{background:rgba(0,180,0,.04)}
+.fn{font-weight:bold;color:var(--c2)}
+.fu{font-size:.72em;color:#444;display:block}
+.ctag{display:inline-block;font-size:.7em;padding:2px 6px;border-radius:6px;font-weight:bold}
+.cBTC{background:rgba(255,150,0,.15);color:#ff9600;border:1px solid rgba(255,150,0,.2)}
+.cETH{background:rgba(100,100,255,.15);color:#8888ff;border:1px solid rgba(100,100,255,.2)}
+.cLTC{background:rgba(0,200,200,.15);color:#00cccc;border:1px solid rgba(0,200,200,.2)}
+.cSOL{background:rgba(150,0,255,.15);color:#cc88ff;border:1px solid rgba(150,0,255,.2)}
+.pb{background:rgba(255,255,255,.06);border-radius:4px;height:4px;overflow:hidden;width:60px;display:inline-block}
+.pf{height:100%;border-radius:4px;background:linear-gradient(90deg,#00d4ff,#00ff88);transition:width .5s}
+.tbr{font-size:.7em;padding:2px 6px;border-radius:6px;white-space:nowrap}
+.tr{background:rgba(0,180,0,.1);color:#00cc00;border:1px solid rgba(0,180,0,.15)}
+.tw{background:rgba(255,140,0,.08);color:#ff9600;border:1px solid rgba(255,140,0,.12)}
+.bal-inp{width:80px;padding:4px 6px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);color:#e0e0ff;border-radius:5px;font-size:.76em;font-family:inherit;text-align:right}
+
+/* ===TOGGLE=== */
+.tgl{position:relative;display:inline-block;width:38px;height:20px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.ts{position:absolute;cursor:pointer;inset:0;background:#333;border-radius:20px;transition:.3s}
+.ts:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.ts{background:#00aa00}
+input:checked+.ts:before{transform:translateX(18px)}
+
+/* ===AC LOG=== */
+.aclog{background:rgba(0,0,0,.4);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;font-size:.76em;font-family:'Courier New',monospace;color:#aaa;margin-top:8px}
+.aclog::-webkit-scrollbar{width:3px}.aclog::-webkit-scrollbar-thumb{background:#00d4ff44}
+.le{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03)}.lok{color:#00cc00}.linf{color:#00aaff}.lwrn{color:#ff9600}.lerr{color:#ff4466}
+
+/* ===PROFILE=== */
+.prof-card{background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(0,255,136,.04));border:1px solid rgba(0,212,255,.2);border-radius:14px;padding:16px;margin-bottom:12px}
+.pdata-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.84em;gap:8px}
+.pdata-key{color:#666;min-width:100px;flex-shrink:0}
+.pdata-val{color:#00ff88;font-family:monospace;font-size:.9em;word-break:break-all;text-align:right}
+.copy-btn{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);color:#00d4ff;padding:2px 7px;border-radius:5px;cursor:pointer;font-size:.72em;flex-shrink:0}
+
+/* ===TG=== */
+.tg-ok{background:rgba(0,180,0,.1);border:1px solid rgba(0,180,0,.2);color:#00cc00;padding:8px 12px;border-radius:8px;font-size:.83em;margin-bottom:10px}
+.tg-no{background:rgba(255,100,0,.08);border:1px solid rgba(255,100,0,.15);color:#ff8844;padding:8px 12px;border-radius:8px;font-size:.83em;margin-bottom:10px}
+
+/* ===NOTIFY=== */
+.ntf{position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:8px 16px;border-radius:16px;font-weight:bold;font-size:.83em;z-index:9998;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.ntf-ok{background:rgba(0,170,0,.9);color:#fff}
+.ntf-err{background:rgba(170,0,30,.9);color:#fff}
+.ntf-info{background:rgba(0,100,200,.9);color:#fff}
+
+/* ===MISC=== */
+.sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85em}
+.sk{color:#666}.sv2{color:var(--c2);font-weight:bold}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:.75em;font-weight:bold}
+.b-green{background:rgba(0,200,0,.15);color:#00cc00;border:1px solid rgba(0,200,0,.2)}
+.b-red{background:rgba(200,0,0,.15);color:#ff4466;border:1px solid rgba(200,0,0,.2)}
+.b-yellow{background:rgba(255,200,0,.12);color:#ffcc00;border:1px solid rgba(255,200,0,.18)}
+.footer{text-align:center;padding:14px;color:#333;font-size:.75em}
+.section-sep{height:1px;background:rgba(0,212,255,.1);margin:14px 0}
+.total-bar{background:linear-gradient(135deg,rgba(0,212,255,.12),rgba(0,255,136,.06));border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+
+<div class="ntf" id="ntf"></div>
+
+<!-- ===INSTALL BANNER=== -->
+<div class="install-banner" id="installBanner">
+    <div style="font-size:.88em"><b style="color:#00d4ff">📲 Установить приложение</b><br><span style="color:#888;font-size:.9em">Добавить на главный экран</span></div>
+    <div style="display:flex;gap:6px">
+        <button class="btn bp bsm" id="installBtn" onclick="installPWA()">Установить</button>
+        <button class="btn bs bsm" onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
+    </div>
+</div>
+
+<!-- ===AUTH=== -->
+<div class="auth" id="authScreen">
+    <div class="auth-logo">⚡</div>
+    <div class="auth-h">CryptoHarvest</div>
+    <div class="auth-s">v4.0 — Автокликер &amp; Трекер кранов</div>
+    <div class="auth-box">
+        <div class="atabs">
+            <button class="atab on" id="atL" onclick="aSwitch('l')">🔓 Вход</button>
+            <button class="atab" id="atR" onclick="aSwitch('r')">✨ Регистрация</button>
+        </div>
+        <div id="aLF">
+            <label class="lbl">Ник</label>
+            <input class="inp" id="lNick" placeholder="Ваш ник" autocomplete="username">
+            <label class="lbl">Пароль</label>
+            <div style="position:relative">
+                <input type="password" class="inp" id="lPass" placeholder="Пароль" onkeydown="if(event.key==='Enter')doLogin()">
+                <span onclick="tp('lPass')" style="position:absolute;right:10px;top:9px;cursor:pointer;color:#555;font-size:.9em">👁</span>
+            </div>
+            <button class="btn bp bfull" onclick="doLogin()">🔓 Войти</button>
+            <div class="aerr" id="lErr"></div>
+        </div>
+        <div id="aRF" style="display:none">
+            <label class="lbl">Ник (2-20 символов)</label>
+            <input class="inp" id="rNick" placeholder="Например: CryptoMaster" maxlength="20">
+            <label class="lbl">Аватар</label>
+            <div class="av-row">
+                <div class="av on" onclick="pickAv(this,'🦊')">🦊</div>
+                <div class="av" onclick="pickAv(this,'🐉')">🐉</div>
+                <div class="av" onclick="pickAv(this,'🤖')">🤖</div>
+                <div class="av" onclick="pickAv(this,'🦁')">🦁</div>
+                <div class="av" onclick="pickAv(this,'👾')">👾</div>
+                <div class="av" onclick="pickAv(this,'🚀')">🚀</div>
+            </div>
+            <label class="lbl">Email (для кранов)</label>
+            <input class="inp" id="rEmail" placeholder="your@email.com" type="email">
+            <label class="lbl">Пароль (мин. 4 символа)</label>
+            <div style="position:relative">
+                <input type="password" class="inp" id="rPass" placeholder="Пароль">
+                <span onclick="tp('rPass')" style="position:absolute;right:10px;top:9px;cursor:pointer;color:#555;font-size:.9em">👁</span>
+            </div>
+            <label class="lbl">Повторите пароль</label>
+            <input type="password" class="inp" id="rPass2" placeholder="Повторите" onkeydown="if(event.key==='Enter')doReg()">
+            <button class="btn bp bfull" onclick="doReg()">✅ Создать аккаунт</button>
+            <div class="aerr" id="rErr"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===HEADER=== -->
+<div class="hdr" id="appHeader" style="display:none">
+    <div class="logo"><span id="hAv">⚡</span><span>CryptoHarvest</span></div>
+    <div class="hdr-right">
+        <div id="acInd" style="display:none" class="badge b-green">🤖 АК</div>
+        <span style="font-size:.78em;color:#00ff88" id="hNick"></span>
+        <button onclick="doLogout()" style="background:rgba(255,0,0,.1);border:1px solid rgba(255,0,0,.15);color:#ff6666;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.72em">⏏</button>
+    </div>
+</div>
+
+<!-- ===NAV=== -->
+<div class="nav" id="appNav" style="display:none">
+    <button class="nb on" onclick="gt(event,'dashboard')">📊 Доход</button>
+    <button class="nb" onclick="gt(event,'faucets')">🚰 Краны</button>
+    <button class="nb" onclick="gt(event,'autoclicker')">🤖 АвтоКлик</button>
+    <button class="nb" onclick="gt(event,'profile')">👤 Профиль</button>
+    <button class="nb" onclick="gt(event,'faucetpay')">💳 FaucetPay</button>
+    <button class="nb" onclick="gt(event,'telegram')">✈️ Telegram</button>
+    <button class="nb" onclick="gt(event,'wallets')">👛 Кошельки</button>
+    <button class="nb" onclick="gt(event,'settings')">⚙️ Ещё</button>
+</div>
+
+<div class="pg" id="appContent" style="display:none">
+
+<!-- ===DASHBOARD=== -->
+<div class="sec on" id="dashboard">
+    <h2 class="ptitle">📊 Доход</h2>
+    <div class="total-bar">
+        <div>
+            <div style="font-size:.78em;color:#777;text-transform:uppercase;letter-spacing:.5px">Итого USD</div>
+            <div style="font-size:1.8em;font-weight:bold;background:linear-gradient(135deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="dTotal">$0.00</div>
+        </div>
+        <div style="text-align:right">
+            <div style="font-size:.78em;color:#777">В рублях</div>
+            <div style="font-size:1.2em;font-weight:bold;color:#ffcc00" id="dRub">0 ₽</div>
+        </div>
+    </div>
+    <div class="sg sg4">
+        <div class="sc"><div class="sl">₿ BTC</div><div class="sv" id="dBTC">0.00000</div><div class="su" id="dBTCu">≈ $0</div></div>
+        <div class="sc"><div class="sl">Ξ ETH</div><div class="sv" id="dETH">0.00000</div><div class="su" id="dETHu">≈ $0</div></div>
+        <div class="sc"><div class="sl">Ł LTC</div><div class="sv" id="dLTC">0.00000</div><div class="su" id="dLTCu">≈ $0</div></div>
+        <div class="sc"><div class="sl">◎ SOL</div><div class="sv" id="dSOL">0.00000</div><div class="su" id="dSOLu">≈ $0</div></div>
+    </div>
+    <div class="box">
+        <div class="bh">✏️ Обновить баланс</div>
+        <div class="irow">
+            <div><label class="lbl">BTC</label><input type="number" class="inp" id="iBTC" placeholder="0.00000000" step="0.00000001"></div>
+            <div><label class="lbl">ETH</label><input type="number" class="inp" id="iETH" placeholder="0.00000000" step="0.00000001"></div>
+            <div><label class="lbl">LTC</label><input type="number" class="inp" id="iLTC" placeholder="0.00000000" step="0.00000001"></div>
+            <div><label class="lbl">SOL</label><input type="number" class="inp" id="iSOL" placeholder="0.00000000" step="0.00000001"></div>
+        </div>
+        <button class="btn bp" onclick="saveE()">💾 Сохранить</button>
+    </div>
+    <div class="box">
+        <div class="bh">🟢 Готовы к сбору</div>
+        <div id="dReady"><p style="color:#444;font-size:.83em">Пусто</p></div>
+    </div>
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span>📋 История</span>
+            <button class="btn bs bsm" onclick="addHist()">+ Запись</button>
+        </div>
+        <div id="dHist"><p style="color:#444;font-size:.83em">Нет записей</p></div>
+    </div>
+</div>
+
+<!-- ===FAUCETS=== -->
+<div class="sec" id="faucets">
+    <h2 class="ptitle">🚰 Краны</h2>
+    <div class="box" id="totalsBox">
+        <div class="bh">💰 Общий баланс по кранам</div>
+        <div class="sg sg4" id="totGrid">
+            <div class="sc"><div class="sl">BTC кранах</div><div class="sv" id="tBTC">0.000000</div></div>
+            <div class="sc"><div class="sl">ETH кранах</div><div class="sv" id="tETH">0.000000</div></div>
+            <div class="sc"><div class="sl">LTC кранах</div><div class="sv" id="tLTC">0.000000</div></div>
+            <div class="sc"><div class="sl">SOL кранах</div><div class="sv" id="tSOL">0.000000</div></div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="bh">➕ Добавить кран</div>
+        <div class="irow">
+            <div><label class="lbl">Название</label><input class="inp" id="fN" placeholder="Название"></div>
+            <div><label class="lbl">URL</label><input class="inp" id="fU" placeholder="https://..."></div>
+        </div>
+        <div class="irow3">
+            <div><label class="lbl">Крипта</label>
+                <select class="inp" id="fC"><option>BTC</option><option>ETH</option><option>LTC</option><option>SOL</option></select>
+            </div>
+            <div><label class="lbl">Интервал(мин)</label><input type="number" class="inp" id="fI" value="60" min="1"></div>
+            <div><label class="lbl">Мин. вывод</label><input class="inp" id="fM" placeholder="0.001 BTC"></div>
+        </div>
+        <button class="btn bp" onclick="addF()">➕ Добавить</button>
+    </div>
+
+    <!-- BTC -->
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span><span class="ctag cBTC">BTC</span> Краны</span>
+            <span class="badge b-yellow" id="btcReady">0 готовы</span>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="ft"><thead><tr>
+                <th>Название</th><th>Интервал</th><th>Прогресс</th><th>Статус</th>
+                <th>Баланс</th><th>Мин.вывод</th><th>Посещений</th><th>Действия</th>
+            </tr></thead><tbody id="fBTC"></tbody></table>
+        </div>
+    </div>
+
+    <!-- ETH -->
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span><span class="ctag cETH">ETH</span> Краны</span>
+            <span class="badge b-yellow" id="ethReady">0 готовы</span>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="ft"><thead><tr>
+                <th>Название</th><th>Интервал</th><th>Прогресс</th><th>Статус</th>
+                <th>Баланс</th><th>Мин.вывод</th><th>Посещений</th><th>Действия</th>
+            </tr></thead><tbody id="fETH"></tbody></table>
+        </div>
+    </div>
+
+    <!-- LTC -->
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span><span class="ctag cLTC">LTC</span> Краны</span>
+            <span class="badge b-yellow" id="ltcReady">0 готовы</span>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="ft"><thead><tr>
+                <th>Название</th><th>Интервал</th><th>Прогресс</th><th>Статус</th>
+                <th>Баланс</th><th>Мин.вывод</th><th>Посещений</th><th>Действия</th>
+            </tr></thead><tbody id="fLTC"></tbody></table>
+        </div>
+    </div>
+
+    <!-- SOL -->
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span><span class="ctag cSOL">SOL</span> Краны</span>
+            <span class="badge b-yellow" id="solReady">0 готовы</span>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="ft"><thead><tr>
+                <th>Название</th><th>Интервал</th><th>Прогресс</th><th>Статус</th>
+                <th>Баланс</th><th>Мин.вывод</th><th>Посещений</th><th>Действия</th>
+            </tr></thead><tbody id="fSOL"></tbody></table>
+        </div>
+    </div>
+</div>
+
+<!-- ===AUTOCLICKER=== -->
+<div class="sec" id="autoclicker">
+    <h2 class="ptitle">🤖 АвтоКликер</h2>
+    <div class="box">
+        <div id="acSt" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:13px;text-align:center;font-weight:bold;color:#666;margin-bottom:12px">⚫ Остановлен</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn bp" id="acBtn" onclick="toggleAC()">▶️ Запустить</button>
+            <button class="btn bs" onclick="openAllReady()">🌐 Открыть все готовые</button>
+            <button class="btn bo" onclick="openNext()">▶ Следующий</button>
+            <button class="btn bd bsm" onclick="clearLog()">🗑 Лог</button>
+        </div>
+        <div class="irow">
+            <div><label class="lbl">Интервал (сек)</label><input type="number" class="inp" id="acSec" value="30" min="5"></div>
+            <div><label class="lbl">Режим</label>
+                <select class="inp" id="acMode">
+                    <option value="all">Все готовые</option>
+                    <option value="one">По одному</option>
+                    <option value="crypto">По криптовалюте</option>
+                </select>
+            </div>
+        </div>
+        <div><label class="lbl">Только крипта (для режима "по криптовалюте")</label>
+            <select class="inp" id="acCrypto"><option value="ALL">Все</option><option>BTC</option><option>ETH</option><option>LTC</option><option>SOL</option></select>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="bh">ℹ️ Как работает</div>
+        <div style="font-size:.8em;color:#888;line-height:1.8">
+            <b style="color:#00d4ff">1.</b> Автокликер открывает краны в браузере по очереди<br>
+            <b style="color:#00d4ff">2.</b> На сайте крана нажмите кнопку "Claim/Roll/Получить"<br>
+            <b style="color:#00d4ff">3.</b> Нажмите "✓ Посетил" в таблице кранов<br>
+            <b style="color:#00d4ff">4.</b> Telegram уведомит когда следующий кран готов<br>
+            <div style="margin-top:8px;color:#ff9600;font-size:.9em">⚠️ CAPTCHA нельзя обойти автоматически — это защита кранов. Автокликер максимально упрощает ручной процесс.</div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="bh">📋 Очередь кранов</div>
+        <div id="acQueue"><p style="color:#444;font-size:.82em">Нет активных кранов</p></div>
+    </div>
+
+    <div class="box">
+        <div class="bh">🖥 Лог автокликера</div>
+        <div class="aclog" id="acLog"><div class="le linf">[Система] AutoClicker v4.0 готов...</div></div>
+    </div>
+</div>
+
+<!-- ===PROFILE=== -->
+<div class="sec" id="profile">
+    <h2 class="ptitle">👤 Профиль & Данные</h2>
+
+    <div class="box">
+        <div class="bh">📋 Мои данные для кранов</div>
+        <div style="font-size:.78em;color:#888;margin-bottom:10px">Храните данные здесь — быстро копируйте при регистрации на кранах</div>
+        <label class="lbl">Email для кранов</label>
+        <input class="inp" id="pEmail" placeholder="your@email.com" type="email" oninput="saveProf()">
+        <label class="lbl">Пароль для кранов (один для всех)</label>
+        <div style="position:relative">
+            <input type="password" class="inp" id="pPass" placeholder="Пароль для регистрации на кранах" oninput="saveProf()">
+            <span onclick="tp('pPass')" style="position:absolute;right:10px;top:9px;cursor:pointer;color:#555">👁</span>
+        </div>
+        <label class="lbl">Имя пользователя (username)</label>
+        <input class="inp" id="pUname" placeholder="Ваш username на кранах" oninput="saveProf()">
+        <button class="btn bp" onclick="saveProf();notify('Сохранено!')">💾 Сохранить</button>
+    </div>
+
+    <div class="prof-card" id="profCard" style="display:none">
+        <div class="bh">📌 Сохранённые данные</div>
+        <div id="profRows"></div>
+        <div style="margin-top:10px;font-size:.76em;color:#666">Нажмите кнопку 📋 чтобы скопировать</div>
+    </div>
+
+    <div class="box">
+        <div class="bh">🎯 Инструкция быстрой регистрации</div>
+        <div style="font-size:.8em;color:#888;line-height:1.9">
+            <b style="color:#00d4ff">1.</b> Откройте сайт крана (кнопка 🌐 в таблице)<br>
+            <b style="color:#00d4ff">2.</b> Нажмите "Register/Sign Up"<br>
+            <b style="color:#00d4ff">3.</b> Скопируйте Email отсюда → вставьте<br>
+            <b style="color:#00d4ff">4.</b> Скопируйте Пароль → вставьте<br>
+            <b style="color:#00d4ff">5.</b> В поле "Bitcoin address" вставьте ваш адрес из 👛 Кошельки<br>
+            <b style="color:#00d4ff">6.</b> Подтвердите email → начните собирать!
+        </div>
+    </div>
+</div>
+
+
+<!-- ===FAUCETPAY=== -->
+<div class="sec" id="faucetpay">
+    <h2 class="ptitle">💳 FaucetPay</h2>
+
+    <!-- Статус -->
+    <div id="fpSt" style="background:rgba(255,100,0,.08);border:1px solid rgba(255,100,0,.15);color:#ff8844;padding:10px 14px;border-radius:10px;font-size:.85em;margin-bottom:12px">❌ Не подключен</div>
+
+    <!-- API ключ -->
+    <div class="box">
+        <div class="bh">🔑 API подключение</div>
+        <label class="lbl">API ключ (Профиль → API Key на faucetpay.io)</label>
+        <div style="position:relative">
+            <input type="password" class="inp" id="fpKey" placeholder="Ваш API ключ FaucetPay">
+            <span onclick="tp('fpKey')" style="position:absolute;right:10px;top:9px;cursor:pointer;color:#555">👁</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn bp" onclick="saveFP()">💾 Сохранить</button>
+            <button class="btn bs" onclick="fpCheckAll()">🔄 Обновить балансы</button>
+        </div>
+        <div style="margin-top:10px;font-size:.78em;color:#666">
+            Получите API ключ: <a href="https://faucetpay.io/account/api" target="_blank" style="color:#00d4ff">faucetpay.io/account/api ↗</a>
+        </div>
+    </div>
+
+    <!-- Балансы FaucetPay -->
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span>💰 Балансы на FaucetPay</span>
+            <button class="btn bs bsm" onclick="fpCheckAll()">🔄</button>
+        </div>
+        <div class="sg sg4" id="fpBalGrid">
+            <div class="sc"><div class="sl">BTC</div><div class="sv" id="fpBTC">—</div><div class="su" id="fpBTCu">≈ $0</div></div>
+            <div class="sc"><div class="sl">ETH</div><div class="sv" id="fpETH">—</div><div class="su" id="fpETHu">≈ $0</div></div>
+            <div class="sc"><div class="sl">LTC</div><div class="sv" id="fpLTC">—</div><div class="su" id="fpLTCu">≈ $0</div></div>
+            <div class="sc"><div class="sl">SOL</div><div class="sv" id="fpSOL">—</div><div class="su" id="fpSOLu">≈ $0</div></div>
+            <div class="sc wide"><div class="sl">Итого USD</div><div class="sv" id="fpTotal" style="font-size:1.6em">—</div></div>
+        </div>
+        <div id="fpLastUpdate" style="font-size:.75em;color:#555;margin-top:8px;text-align:right"></div>
+    </div>
+
+    <!-- История выплат -->
+    <div class="box">
+        <div class="bh" style="justify-content:space-between">
+            <span>📋 История выплат</span>
+            <div style="display:flex;gap:6px">
+                <select class="inp" id="fpHistCr" style="width:90px;margin:0;padding:4px 8px;font-size:.8em">
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                    <option value="LTC">LTC</option>
+                    <option value="SOL">SOL</option>
+                </select>
+                <button class="btn bs bsm" onclick="fpGetHistory()">📥 Загрузить</button>
+            </div>
+        </div>
+        <div id="fpHistory"><p style="color:#444;font-size:.82em">Нажмите "Загрузить" для получения истории</p></div>
+    </div>
+
+    <!-- Краны FaucetPay -->
+    <div class="box">
+        <div class="bh">🚰 Краны совместимые с FaucetPay</div>
+        <div style="font-size:.8em;color:#aaa;line-height:1.8;margin-bottom:10px">
+            Эти краны выплачивают напрямую на ваш FaucetPay аккаунт — регистрируйтесь с тем же адресом кошелька!
+        </div>
+        <div id="fpFaucetList"></div>
+    </div>
+
+    <!-- Инструкция -->
+    <div class="box">
+        <div class="bh">📖 Как использовать FaucetPay</div>
+        <div style="font-size:.8em;color:#888;line-height:2">
+            <b style="color:#00d4ff">1.</b> Зарегистрируйтесь на <a href="https://faucetpay.io" target="_blank" style="color:#00d4ff">faucetpay.io ↗</a><br>
+            <b style="color:#00d4ff">2.</b> Добавьте ваши адреса кошельков BTC/ETH/LTC/SOL<br>
+            <b style="color:#00d4ff">3.</b> Получите API ключ в разделе профиля<br>
+            <b style="color:#00d4ff">4.</b> Вставьте ключ выше → Сохранить<br>
+            <b style="color:#00d4ff">5.</b> Регистрируйтесь на кранах <b style="color:#fff">с тем же адресом</b> что на FaucetPay<br>
+            <b style="color:#00d4ff">6.</b> Краны автоматически выплачивают на FaucetPay<br>
+            <b style="color:#00d4ff">7.</b> Когда накопите — выводите на основной кошелёк<br>
+            <div style="margin-top:8px;padding:8px;background:rgba(0,212,255,.06);border-radius:8px;color:#00d4ff">
+                ✅ Минимум вывода на FaucetPay: от <b>0.00000001 BTC</b><br>
+                ✅ Накопления суммируются автоматически<br>
+                ✅ Вывод на ваш кошелёк от $1
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===TELEGRAM=== -->
+<div class="sec" id="telegram">
+    <h2 class="ptitle">✈️ Telegram</h2>
+    <div class="box">
+        <div id="tgSt" class="tg-no">❌ Бот не подключен</div>
+        <label class="lbl">Bot Token (от @BotFather)</label>
+        <div style="position:relative">
+            <input type="password" class="inp" id="tgTok" placeholder="1234567890:AABBcc...">
+            <span onclick="tp('tgTok')" style="position:absolute;right:10px;top:9px;cursor:pointer;color:#555">👁</span>
+        </div>
+        <label class="lbl">Chat ID (от @userinfobot)</label>
+        <input class="inp" id="tgCid" placeholder="123456789">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn bp" onclick="saveTG()">💾 Сохранить</button>
+            <button class="btn bs" onclick="testTG()">📤 Тест</button>
+            <button class="btn bg" onclick="sendReport()">📊 Отчет</button>
+        </div>
+    </div>
+    <div class="box">
+        <div class="bh">🔔 Уведомления</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <label style="display:flex;align-items:center;justify-content:space-between;font-size:.87em"><span>Кран готов к сбору</span><label class="tgl"><input type="checkbox" id="tnR" checked><span class="ts"></span></label></label>
+            <label style="display:flex;align-items:center;justify-content:space-between;font-size:.87em"><span>Накоплен минимум для вывода</span><label class="tgl"><input type="checkbox" id="tnM" checked><span class="ts"></span></label></label>
+            <label style="display:flex;align-items:center;justify-content:space-between;font-size:.87em"><span>Ежедневный отчёт</span><label class="tgl"><input type="checkbox" id="tnD"><span class="ts"></span></label></label>
+        </div>
+    </div>
+    <div class="box">
+        <div class="bh">🤖 Команды бота</div>
+        <div style="font-family:monospace;font-size:.82em;line-height:2.2;color:#aaa">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px">
+                <span style="color:#00d4ff">/start</span><span>→ Главное меню</span>
+                <span style="color:#00d4ff">/help</span><span>→ Справка по всем функциям</span>
+                <span style="color:#00d4ff">/status</span><span>→ Статус текущих сборов</span>
+                <span style="color:#00d4ff">/balance</span><span>→ Баланс всех кошельков</span>
+                <span style="color:#00d4ff">/faucets</span><span>→ Список доступных кранов</span>
+                <span style="color:#00d4ff">/ready</span><span>→ Готовые к сбору прямо сейчас</span>
+                <span style="color:#00d4ff">/fp</span><span>→ Баланс на FaucetPay</span>
+                <span style="color:#00d4ff">/auto</span><span>→ Вкл/выкл автосбор</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="bh">📱 Кнопки главного меню</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">💰 Мои кошельки</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">📊 Статус</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">🚰 Найти краны</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">⚙️ Автосбор</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">💳 FaucetPay</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">📈 Балансы</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">⏰ Таймеры</div>
+            <div style="background:rgba(0,212,255,.07);border-radius:8px;padding:8px;font-size:.8em;text-align:center">ℹ️ Справка</div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="bh">📖 Как запустить бота</div>
+        <div style="font-size:.8em;color:#888;line-height:1.9">
+            <b style="color:#00d4ff">1.</b> Telegram → <b style="color:#fff">@BotFather</b> → /newbot → скопируйте токен<br>
+            <b style="color:#00d4ff">2.</b> Telegram → <b style="color:#fff">@userinfobot</b> → /start → скопируйте ID<br>
+            <b style="color:#00d4ff">3.</b> Вставьте токен и Chat ID выше → Сохранить<br>
+            <b style="color:#00d4ff">4.</b> Скачайте <b style="color:#fff">bot.js</b> + <b style="color:#fff">package.json</b><br>
+            <b style="color:#00d4ff">5.</b> Откройте <b style="color:#fff">bot.js</b> → заполните CONFIG в начале файла<br>
+            <b style="color:#00d4ff">6.</b> Задеплойте на Railway.app (бесплатно):<br>
+            <span style="margin-left:12px">→ railway.app → New Project → Deploy from GitHub</span><br>
+            <b style="color:#00d4ff">7.</b> Бот запустится и напишет вам в Telegram!
+        </div>
+    </div>
+</div>
+
+<!-- ===WALLETS=== -->
+<div class="sec" id="wallets">
+    <h2 class="ptitle">👛 Кошельки</h2>
+    <div class="box" style="border-color:rgba(255,150,0,.3)">
+        <div class="bh" style="color:#ff9600">₿ Bitcoin (BTC)</div>
+        <input class="inp" id="wBTC" placeholder="bc1q... или 1... или 3..." oninput="saveW()">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="badge" id="wsBTC" style="font-size:.75em"></div>
+            <button class="copy-btn" onclick="copyVal('wBTC')">📋 Копировать</button>
+        </div>
+        <div style="margin-top:8px;font-size:.76em;color:#555">Проверить: <a href="https://blockchain.com/explorer" target="_blank" style="color:#ff9600">blockchain.com ↗</a></div>
+    </div>
+    <div class="box" style="border-color:rgba(100,100,255,.3)">
+        <div class="bh" style="color:#8888ff">Ξ Ethereum (ETH)</div>
+        <input class="inp" id="wETH" placeholder="0x..." oninput="saveW()">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="badge" id="wsETH" style="font-size:.75em"></div>
+            <button class="copy-btn" onclick="copyVal('wETH')">📋 Копировать</button>
+        </div>
+        <div style="margin-top:8px;font-size:.76em;color:#555">Проверить: <a href="https://etherscan.io" target="_blank" style="color:#8888ff">etherscan.io ↗</a></div>
+    </div>
+    <div class="box" style="border-color:rgba(0,200,200,.3)">
+        <div class="bh" style="color:#00cccc">Ł Litecoin (LTC)</div>
+        <input class="inp" id="wLTC" placeholder="ltc1q... или L..." oninput="saveW()">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="badge" id="wsLTC" style="font-size:.75em"></div>
+            <button class="copy-btn" onclick="copyVal('wLTC')">📋 Копировать</button>
+        </div>
+        <div style="margin-top:8px;font-size:.76em;color:#555">Проверить: <a href="https://blockchair.com/litecoin" target="_blank" style="color:#00cccc">blockchair.com ↗</a></div>
+    </div>
+    <div class="box" style="border-color:rgba(150,0,255,.3)">
+        <div class="bh" style="color:#cc88ff">◎ Solana (SOL)</div>
+        <input class="inp" id="wSOL" placeholder="SOL адрес (base58)..." oninput="saveW()">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="badge" id="wsSOL" style="font-size:.75em"></div>
+            <button class="copy-btn" onclick="copyVal('wSOL')">📋 Копировать</button>
+        </div>
+        <div style="margin-top:8px;font-size:.76em;color:#555">Проверить: <a href="https://solscan.io" target="_blank" style="color:#cc88ff">solscan.io ↗</a></div>
+    </div>
+</div>
+
+<!-- ===SETTINGS=== -->
+<div class="sec" id="settings">
+    <h2 class="ptitle">⚙️ Настройки</h2>
+    <div class="box">
+        <div class="bh">📲 Установить приложение</div>
+        <p style="font-size:.82em;color:#888;margin-bottom:10px">Добавьте CryptoHarvest на главный экран для быстрого доступа</p>
+        <button class="btn bp bfull" id="installBtn2" onclick="installPWA()">📲 Установить на телефон</button>
+        <div style="font-size:.78em;color:#666;margin-top:6px">
+            iOS: Safari → Поделиться → "На экран дома"<br>
+            Android: Chrome → меню ⋮ → "Добавить на главный экран"
+        </div>
+    </div>
+    <div class="box">
+        <div class="bh">💱 Курсы монет</div>
+        <div class="sr"><span class="sk">BTC</span><span class="sv2">~$45,000 / ≈4,500,000 ₽</span></div>
+        <div class="sr"><span class="sk">ETH</span><span class="sv2">~$2,500 / ≈250,000 ₽</span></div>
+        <div class="sr"><span class="sk">LTC</span><span class="sv2">~$150 / ≈15,000 ₽</span></div>
+        <div class="sr"><span class="sk">SOL</span><span class="sv2">~$180 / ≈18,000 ₽</span></div>
+    </div>
+    <div class="box">
+        <div class="bh">📊 Статистика</div>
+        <div class="sr"><span class="sk">Всего кранов</span><span class="sv2" id="sTot">0</span></div>
+        <div class="sr"><span class="sk">Активных</span><span class="sv2" id="sAct">0</span></div>
+        <div class="sr"><span class="sk">Всего посещений</span><span class="sv2" id="sVis">0</span></div>
+        <div class="sr"><span class="sk">Версия</span><span class="sv2">v4.0</span></div>
+    </div>
+    <div class="box">
+        <div class="bh">💾 Данные</div>
+        <button class="btn bs bfull" onclick="expData()">📥 Экспорт резервной копии</button>
+        <button class="btn bd bfull" onclick="clearAll()">🗑 Очистить все данные</button>
+    </div>
+</div>
+
+</div><!-- /pg -->
+<div class="footer" id="appFooter" style="display:none">CryptoHarvest v4.0 • 2026 • BTC+ETH+LTC+SOL</div>
+
+<script>
+const P={BTC:45000,ETH:2500,LTC:150,SOL:180};
+const RUB=100;
+
+const DEFS=[
+    // BTC (6 кранов)
+    {id:1,name:'FreeBitco.in',url:'https://freebitco.in',crypto:'BTC',interval:60,enabled:true,minW:'0.0003 BTC',bal:0,last:null,vis:0},
+    {id:2,name:'Moon Bitcoin',url:'https://moonbitcoin.io',crypto:'BTC',interval:5,enabled:true,minW:'нет мин.',bal:0,last:null,vis:0},
+    {id:3,name:'Cointiply',url:'https://cointiply.com',crypto:'BTC',interval:60,enabled:true,minW:'0.0001 BTC',bal:0,last:null,vis:0},
+    {id:4,name:'FireFaucet BTC',url:'https://firefaucet.win',crypto:'BTC',interval:60,enabled:true,minW:'0.00002 BTC',bal:0,last:null,vis:0},
+    {id:5,name:'Rollercoin',url:'https://rollercoin.com',crypto:'BTC',interval:1440,enabled:true,minW:'0.0001 BTC',bal:0,last:null,vis:0},
+    {id:6,name:'CoinFaucet.eu',url:'https://coinfaucet.eu',crypto:'BTC',interval:180,enabled:false,minW:'0.001 BTC',bal:0,last:null,vis:0},
+    // ETH (5 кранов)
+    {id:7,name:'FireFaucet ETH',url:'https://firefaucet.win',crypto:'ETH',interval:60,enabled:true,minW:'0.001 ETH',bal:0,last:null,vis:0},
+    {id:8,name:'AllCoins ETH',url:'https://allcoins.pw',crypto:'ETH',interval:60,enabled:true,minW:'0.01 ETH',bal:0,last:null,vis:0},
+    {id:9,name:'Ether Faucet',url:'https://etherfaucet.xyz',crypto:'ETH',interval:240,enabled:true,minW:'0.0001 ETH',bal:0,last:null,vis:0},
+    {id:10,name:'Free-Ethereum.io',url:'https://free-ethereum.io',crypto:'ETH',interval:60,enabled:true,minW:'0.005 ETH',bal:0,last:null,vis:0},
+    {id:11,name:'Moon Ethereum',url:'https://moonethereum.io',crypto:'ETH',interval:5,enabled:false,minW:'нет мин.',bal:0,last:null,vis:0},
+    // LTC (6 кранов)
+    {id:12,name:'Moon Litecoin',url:'https://moonlitecoin.com',crypto:'LTC',interval:5,enabled:true,minW:'нет мин.',bal:0,last:null,vis:0},
+    {id:13,name:'Free-Litecoin.com',url:'https://free-litecoin.com',crypto:'LTC',interval:60,enabled:true,minW:'0.01 LTC',bal:0,last:null,vis:0},
+    {id:14,name:'FireFaucet LTC',url:'https://firefaucet.win',crypto:'LTC',interval:60,enabled:true,minW:'0.005 LTC',bal:0,last:null,vis:0},
+    {id:15,name:'Litecoin-Faucet',url:'https://litecoin-faucet.net',crypto:'LTC',interval:120,enabled:true,minW:'0.02 LTC',bal:0,last:null,vis:0},
+    {id:16,name:'AllCoins LTC',url:'https://allcoins.pw',crypto:'LTC',interval:60,enabled:true,minW:'0.01 LTC',bal:0,last:null,vis:0},
+    {id:17,name:'GratisFaucet LTC',url:'https://gratisfaucet.win',crypto:'LTC',interval:60,enabled:false,minW:'0.001 LTC',bal:0,last:null,vis:0},
+    // SOL (5 кранов)
+    {id:18,name:'Sol-Faucet.com',url:'https://sol-faucet.com',crypto:'SOL',interval:60,enabled:true,minW:'0.001 SOL',bal:0,last:null,vis:0},
+    {id:19,name:'FireFaucet SOL',url:'https://firefaucet.win',crypto:'SOL',interval:60,enabled:true,minW:'0.001 SOL',bal:0,last:null,vis:0},
+    {id:20,name:'AllCoins SOL',url:'https://allcoins.pw',crypto:'SOL',interval:60,enabled:true,minW:'0.01 SOL',bal:0,last:null,vis:0},
+    {id:21,name:'SolFaucet.io',url:'https://solfaucet.io',crypto:'SOL',interval:60,enabled:true,minW:'нет мин.',bal:0,last:null,vis:0},
+    {id:22,name:'Stakely SOL',url:'https://stakely.io/faucet/solana-sol',crypto:'SOL',interval:1440,enabled:true,minW:'нет мин.',bal:0,last:null,vis:0},
+];
+
+let D={
+    faucets:DEFS,
+    earnings:{BTC:0,ETH:0,LTC:0,SOL:0},
+    wallets:{BTC:'',ETH:'',LTC:'',SOL:''},
+    history:[],
+    tg:{token:'',chatId:'',notifyReady:true,notifyMin:true,notifyDaily:false},
+    profile:{email:'',pass:'',uname:''},
+    fp:{key:'',lastCheck:null},
+    totalVis:0,
+};
+
+let acTimer=null, acIdx=0, selAv='🦊', deferredPrompt=null;
+
+// ===PWA INSTALL===
+window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();
+    deferredPrompt=e;
+    document.getElementById('installBanner').classList.add('show');
+});
+function installPWA(){
+    if(deferredPrompt){
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(()=>{
+            deferredPrompt=null;
+            document.getElementById('installBanner').classList.remove('show');
+            notify('✅ Приложение установлено!');
+        });
+    } else {
+        notify('Используйте меню браузера: "Добавить на главный экран"','info');
+    }
+}
+
+// ===AUTH===
+function aSwitch(t){
+    document.getElementById('aLF').style.display=t==='l'?'block':'none';
+    document.getElementById('aRF').style.display=t==='r'?'block':'none';
+    document.getElementById('atL').className='atab'+(t==='l'?' on':'');
+    document.getElementById('atR').className='atab'+(t==='r'?' on':'');
+}
+function pickAv(el,em){document.querySelectorAll('.av').forEach(e=>e.classList.remove('on'));el.classList.add('on');selAv=em}
+function tp(id){const e=document.getElementById(id);e.type=e.type==='password'?'text':'password'}
+function hp(p){let h=0;for(let i=0;i<p.length;i++)h=((h<<5)-h)+p.charCodeAt(i);return(h>>>0).toString(36)}
+function doLogin(){
+    const nick=document.getElementById('lNick').value.trim();
+    const pass=document.getElementById('lPass').value;
+    const err=document.getElementById('lErr');
+    if(!nick||!pass){err.textContent='⚠️ Введите ник и пароль';return}
+    const users=JSON.parse(localStorage.getItem('ch_u')||'{}');
+    const u=users[nick.toLowerCase()];
+    if(!u){err.textContent='❌ Пользователь не найден';return}
+    if(u.hash!==hp(pass)){err.textContent='❌ Неверный пароль';return}
+    localStorage.setItem('ch_s',JSON.stringify({nick:u.nick,av:u.av,email:u.email||''}));
+    showApp(u.nick,u.av);
+}
+function doReg(){
+    const nick=document.getElementById('rNick').value.trim();
+    const email=document.getElementById('rEmail').value.trim();
+    const pass=document.getElementById('rPass').value;
+    const p2=document.getElementById('rPass2').value;
+    const err=document.getElementById('rErr');
+    if(!nick||nick.length<2){err.textContent='⚠️ Ник мин. 2 символа';return}
+    if(!pass||pass.length<4){err.textContent='⚠️ Пароль мин. 4 символа';return}
+    if(pass!==p2){err.textContent='❌ Пароли не совпадают';return}
+    const users=JSON.parse(localStorage.getItem('ch_u')||'{}');
+    if(users[nick.toLowerCase()]){err.textContent='❌ Ник уже занят';return}
+    users[nick.toLowerCase()]={nick,av:selAv,hash:hp(pass),email};
+    localStorage.setItem('ch_u',JSON.stringify(users));
+    localStorage.setItem('ch_s',JSON.stringify({nick,av:selAv,email}));
+    // Сохраняем email в профиль
+    const saved=JSON.parse(localStorage.getItem('ch4')||'{}');
+    if(!saved.profile)saved.profile={};
+    saved.profile.email=email;
+    saved.profile.pass=pass;
+    localStorage.setItem('ch4',JSON.stringify(saved));
+    showApp(nick,selAv);
+}
+function showApp(nick,av){
+    document.getElementById('authScreen').style.display='none';
+    ['appHeader','appNav','appContent','appFooter'].forEach(id=>document.getElementById(id).style.display='');
+    document.getElementById('appContent').style.display='block';
+    document.getElementById('appFooter').style.display='block';
+    document.getElementById('hNick').textContent=av+' '+nick;
+    document.getElementById('hAv').textContent=av;
+    load();
+}
+function doLogout(){
+    if(confirm('Выйти?')){
+        if(acTimer)clearInterval(acTimer);
+        localStorage.removeItem('ch_s');
+        location.reload();
+    }
+}
+
+// ===DATA===
+function load(){
+    const s=localStorage.getItem('ch4');
+    if(s){
+        const sv=JSON.parse(s);
+        D={...D,...sv};
+        DEFS.forEach(df=>{if(!D.faucets.find(f=>f.id===df.id))D.faucets.push(df)});
+    }
+    save();render();
+    loadTG();loadProf();loadFP();
+}
+function save(){localStorage.setItem('ch4',JSON.stringify(D))}
+
+// ===RENDER===
+function render(){
+    const {BTC:b,ETH:e,LTC:l,SOL:s}=D.earnings;
+    const total=b*P.BTC+e*P.ETH+l*P.LTC+s*P.SOL;
+    document.getElementById('dTotal').textContent='$'+total.toFixed(2);
+    document.getElementById('dRub').textContent=(total*RUB).toFixed(0)+' ₽';
+    document.getElementById('dBTC').textContent=b.toFixed(5);
+    document.getElementById('dETH').textContent=e.toFixed(5);
+    document.getElementById('dLTC').textContent=l.toFixed(5);
+    document.getElementById('dSOL').textContent=s.toFixed(5);
+    document.getElementById('dBTCu').textContent='≈ $'+(b*P.BTC).toFixed(2);
+    document.getElementById('dETHu').textContent='≈ $'+(e*P.ETH).toFixed(2);
+    document.getElementById('dLTCu').textContent='≈ $'+(l*P.LTC).toFixed(2);
+    document.getElementById('dSOLu').textContent='≈ $'+(s*P.SOL).toFixed(2);
+    document.getElementById('iBTC').value=b||'';
+    document.getElementById('iETH').value=e||'';
+    document.getElementById('iLTC').value=l||'';
+    document.getElementById('iSOL').value=s||'';
+
+    // Ready
+    const rdy=D.faucets.filter(f=>f.enabled&&isRdy(f));
+    const rdEl=document.getElementById('dReady');
+    rdEl.innerHTML=rdy.length?rdy.map(f=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+            <div><span class="ctag c${f.crypto}">${f.crypto}</span> <span style="font-size:.87em;margin-left:6px">${f.name}</span></div>
+            <a href="${f.url}" target="_blank" class="btn bg bsm" onclick="markV(${f.id})">🌐 Открыть</a>
+        </div>`).join('')
+        :'<p style="color:#444;font-size:.82em">Все краны на паузе, ждите...</p>';
+
+    // History
+    const hist=D.history||[];
+    document.getElementById('dHist').innerHTML=hist.length?[...hist].reverse().slice(0,8).map(h=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px;background:rgba(0,200,0,.05);border-radius:6px;margin-bottom:5px;font-size:.82em">
+            <div><b style="color:#00ff88">${h.note}</b><div style="color:#555;font-size:.85em">${h.date}</div></div>
+            <span style="color:#00ff88;font-weight:bold">+${h.amount} ${h.crypto}</span>
+        </div>`).join('')
+        :'<p style="color:#444;font-size:.82em">Нет записей</p>';
+
+    // Faucet tables
+    ['BTC','ETH','LTC','SOL'].forEach(cr=>{
+        const list=D.faucets.filter(f=>f.crypto===cr);
+        const rdyCount=list.filter(f=>f.enabled&&isRdy(f)).length;
+        const el=document.getElementById('f'+cr);
+        const rdEl2=document.getElementById(cr.toLowerCase()+'Ready');
+        if(rdEl2){rdEl2.textContent=rdyCount+' готовы';rdEl2.className='badge '+(rdyCount>0?'b-green':'b-yellow')}
+        if(el)el.innerHTML=list.map(f=>fRow(f)).join('');
+    });
+
+    // Totals by faucet
+    ['BTC','ETH','LTC','SOL'].forEach(cr=>{
+        const tot=D.faucets.filter(f=>f.crypto===cr).reduce((a,f)=>a+(f.bal||0),0);
+        const el=document.getElementById('t'+cr);
+        if(el)el.textContent=tot.toFixed(6);
+    });
+
+    // Wallets
+    ['BTC','ETH','LTC','SOL'].forEach(c=>{
+        const el=document.getElementById('w'+c);
+        if(el)el.value=D.wallets[c]||'';
+        const st=document.getElementById('ws'+c);
+        if(st){
+            const v=D.wallets[c];
+            st.textContent=v?'✓ Сохранен':'✗ Не указан';
+            st.className='badge '+(v?'b-green':'b-red');
+        }
+    });
+
+    // Stats
+    document.getElementById('sTot').textContent=D.faucets.length;
+    document.getElementById('sAct').textContent=D.faucets.filter(f=>f.enabled).length;
+    document.getElementById('sVis').textContent=D.totalVis||0;
+
+    renderACQueue();
+}
+
+function fRow(f){
+    const rd=isRdy(f);
+    const pct=getPct(f);
+    return `<tr class="${rd&&f.enabled?'ready':''}">
+        <td><div class="fn">${f.name}</div><span class="fu">${f.url.replace('https://','')}</span></td>
+        <td style="color:#888">${f.interval<60?f.interval+'м':Math.round(f.interval/60)+'ч'}</td>
+        <td><div class="pb"><div class="pf" style="width:${pct}%"></div></div></td>
+        <td><span class="tbr ${rd&&f.enabled?'tr':'tw'}">${!f.enabled?'⏸️ Откл':rd?'✅ Готов':'⏳ '+getLeft(f)}</span></td>
+        <td><input type="number" class="bal-inp" id="b${f.id}" value="${(f.bal||0).toFixed(6)}" step="0.000001" onchange="updB(${f.id})" title="Баланс на кране"></td>
+        <td style="color:#666;font-size:.78em;white-space:nowrap">${f.minW}</td>
+        <td style="color:#888;text-align:center">${f.vis||0}</td>
+        <td style="white-space:nowrap">
+            <label class="tgl" style="margin-right:4px"><input type="checkbox" ${f.enabled?'checked':''} onchange="togF(${f.id})"><span class="ts"></span></label>
+            <a href="${f.url}" target="_blank" class="btn bg bsm" style="display:inline-flex;margin-right:3px" onclick="markV(${f.id})">🌐</a>
+            <button class="btn bo bsm" style="margin-right:3px" onclick="markV(${f.id})">✓</button>
+            <button class="btn bd bsm" onclick="delF(${f.id})">✕</button>
+        </td>
+    </tr>`;
+}
+
+// ===HELPERS===
+function isRdy(f){return !f.last||(Date.now()-f.last)>=f.interval*60000}
+function getPct(f){if(!f.last)return 100;return Math.min(100,Math.round((Date.now()-f.last)/(f.interval*60000)*100))}
+function getLeft(f){
+    if(!f.last)return 'сейчас';
+    const l=f.interval*60000-(Date.now()-f.last);
+    if(l<=0)return 'сейчас';
+    const h=Math.floor(l/3600000),m=Math.floor((l%3600000)/60000);
+    return h>0?`${h}ч ${m}м`:`${m}м`;
+}
+
+// ===FAUCET ACTIONS===
+function addF(){
+    const n=document.getElementById('fN').value.trim();
+    const u=document.getElementById('fU').value.trim();
+    if(!n||!u){notify('Введите название и URL','err');return}
+    D.faucets.push({id:Date.now(),name:n,url:u,crypto:document.getElementById('fC').value,
+        interval:parseInt(document.getElementById('fI').value)||60,
+        enabled:true,minW:document.getElementById('fM').value||'—',bal:0,last:null,vis:0});
+    document.getElementById('fN').value='';document.getElementById('fU').value='';document.getElementById('fM').value='';
+    save();render();notify('✅ Кран добавлен!');
+}
+function delF(id){if(confirm('Удалить кран?')){D.faucets=D.faucets.filter(f=>f.id!==id);save();render()}}
+function togF(id){const f=D.faucets.find(f=>f.id===id);if(f){f.enabled=!f.enabled;save();render()}}
+function markV(id){
+    const f=D.faucets.find(f=>f.id===id);
+    if(f){f.last=Date.now();f.vis=(f.vis||0)+1;D.totalVis=(D.totalVis||0)+1;save();render();notify('✓ Посещение отмечено!')}
+}
+function updB(id){
+    const f=D.faucets.find(f=>f.id===id);
+    const v=parseFloat(document.getElementById('b'+id).value)||0;
+    if(f){f.bal=v;save();render()}
+}
+function saveE(){
+    D.earnings={BTC:parseFloat(document.getElementById('iBTC').value)||0,ETH:parseFloat(document.getElementById('iETH').value)||0,LTC:parseFloat(document.getElementById('iLTC').value)||0,SOL:parseFloat(document.getElementById('iSOL').value)||0};
+    save();render();notify('💰 Баланс сохранен!');
+}
+function addHist(){
+    const cr=prompt('Криптовалюта (BTC/ETH/LTC/SOL):','BTC');if(!cr)return;
+    const am=prompt('Сумма:','0.0001');if(!am)return;
+    const nt=prompt('Описание:','Сбор с крана');
+    D.history=D.history||[];
+    D.history.push({crypto:cr.toUpperCase(),amount:parseFloat(am)||0,note:nt||'Транзакция',date:new Date().toLocaleString('ru')});
+    save();render();notify('Запись добавлена!');
+}
+
+// ===WALLETS===
+function saveW(){
+    D.wallets={BTC:document.getElementById('wBTC').value,ETH:document.getElementById('wETH').value,LTC:document.getElementById('wLTC').value,SOL:document.getElementById('wSOL').value};
+    save();render();
+}
+function copyVal(id){
+    const v=document.getElementById(id).value;
+    if(!v){notify('Нет данных для копирования','err');return}
+    navigator.clipboard.writeText(v).then(()=>notify('📋 Скопировано!')).catch(()=>{
+        const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);notify('📋 Скопировано!');
+    });
+}
+
+// ===PROFILE===
+function loadProf(){
+    if(D.profile){
+        document.getElementById('pEmail').value=D.profile.email||'';
+        document.getElementById('pPass').value=D.profile.pass||'';
+        document.getElementById('pUname').value=D.profile.uname||'';
+    }
+    updateProfCard();
+}
+function saveProf(){
+    D.profile={email:document.getElementById('pEmail').value,pass:document.getElementById('pPass').value,uname:document.getElementById('pUname').value};
+    save();updateProfCard();
+}
+function updateProfCard(){
+    const p=D.profile;
+    if(!p||(!p.email&&!p.pass&&!p.uname)){document.getElementById('profCard').style.display='none';return}
+    document.getElementById('profCard').style.display='block';
+    const rows=[
+        {k:'📧 Email',v:p.email||'—',id:'pe'},
+        {k:'🔑 Пароль',v:p.pass||'—',id:'pp'},
+        {k:'👤 Username',v:p.uname||'—',id:'pu'},
+    ];
+    document.getElementById('profRows').innerHTML=rows.map(r=>`
+        <div class="pdata-row">
+            <span class="pdata-key">${r.k}</span>
+            <span class="pdata-val" id="${r.id}">${r.id==='pp'&&r.v!=='—'?'••••••':r.v}</span>
+            <button class="copy-btn" onclick="copyText('${r.v}')">📋</button>
+        </div>`).join('');
+}
+function copyText(v){
+    if(!v||v==='—'){notify('Нет данных','err');return}
+    navigator.clipboard.writeText(v).then(()=>notify('📋 Скопировано!')).catch(()=>{
+        const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);notify('📋 Скопировано!');
+    });
+}
+
+// ===AUTOCLICKER===
+function toggleAC(){
+    if(acTimer){
+        clearInterval(acTimer);acTimer=null;
+        document.getElementById('acSt').style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:13px;text-align:center;font-weight:bold;color:#666;margin-bottom:12px';
+        document.getElementById('acSt').textContent='⚫ Остановлен';
+        document.getElementById('acBtn').innerHTML='▶️ Запустить';
+        document.getElementById('acInd').style.display='none';
+        acLog('⏹ AutoClicker остановлен','lwrn');
+    } else {
+        const sec=parseInt(document.getElementById('acSec').value)||30;
+        document.getElementById('acSt').style.cssText='background:rgba(0,200,0,.1);border:1px solid rgba(0,200,0,.2);border-radius:10px;padding:13px;text-align:center;font-weight:bold;color:#00cc00;margin-bottom:12px';
+        document.getElementById('acSt').textContent=`🟢 Работает (каждые ${sec} сек)`;
+        document.getElementById('acBtn').innerHTML='⏹ Остановить';
+        document.getElementById('acInd').style.display='inline-flex';
+        acLog(`▶️ AutoClicker запущен! Интервал: ${sec}с`,'linf');
+        acTimer=setInterval(acTick,sec*1000);
+        acTick();
+    }
+}
+function acTick(){
+    const mode=document.getElementById('acMode').value;
+    const cr=document.getElementById('acCrypto').value;
+    let pool=D.faucets.filter(f=>f.enabled&&isRdy(f));
+    if(mode==='crypto'&&cr!=='ALL')pool=pool.filter(f=>f.crypto===cr);
+    if(!pool.length){acLog('💤 Нет готовых кранов...','linf');return}
+    if(mode==='one'){
+        const f=pool[acIdx%pool.length];acIdx++;
+        acLog(`🌐 Открываю: ${f.name} [${f.crypto}]`,'lok');
+        window.open(f.url,'_blank');
+        tgSend(`🚰 *АвтоКликер*: ${f.name}\n💰 ${f.crypto}\n🔗 [Открыть](${f.url})`);
+    } else {
+        pool.forEach((f,i)=>setTimeout(()=>{window.open(f.url,'_blank');acLog(`🌐 Открыт: ${f.name}`,'lok')},i*1200));
+        tgSend(`🤖 АвтоКликер открыл ${pool.length} кранов`);
+    }
+    renderACQueue();
+}
+function openAllReady(){
+    const rdy=D.faucets.filter(f=>f.enabled&&isRdy(f));
+    if(!rdy.length){notify('Нет готовых кранов','err');return}
+    rdy.forEach((f,i)=>setTimeout(()=>{window.open(f.url,'_blank');acLog(`🌐 Открыт: ${f.name}`,'lok')},i*1200));
+    notify(`Открываю ${rdy.length} кранов...`);
+}
+function openNext(){
+    const rdy=D.faucets.filter(f=>f.enabled&&isRdy(f));
+    if(!rdy.length){notify('Нет готовых кранов','err');return}
+    const f=rdy[0];window.open(f.url,'_blank');acLog(`🌐 Открыт: ${f.name}`,'lok');notify('Открываю: '+f.name);
+}
+function renderACQueue(){
+    const el=document.getElementById('acQueue');if(!el)return;
+    const all=D.faucets.filter(f=>f.enabled);
+    if(!all.length){el.innerHTML='<p style="color:#444;font-size:.82em">Нет активных кранов</p>';return}
+    el.innerHTML=all.map(f=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82em">
+            <div><span class="ctag c${f.crypto}">${f.crypto}</span> <span style="margin-left:7px">${f.name}</span></div>
+            <span class="tbr ${isRdy(f)?'tr':'tw'}">${isRdy(f)?'✅ Готов':'⏳ '+getLeft(f)}</span>
+        </div>`).join('');
+}
+function acLog(msg,cls='linf'){
+    const el=document.getElementById('acLog');if(!el)return;
+    const d=document.createElement('div');d.className='le '+cls;
+    d.textContent='['+new Date().toLocaleTimeString('ru')+'] '+msg;
+    el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+function clearLog(){document.getElementById('acLog').innerHTML='<div class="le linf">[Лог очищен]</div>'}
+
+// ===TELEGRAM===
+function loadTG(){
+    if(D.tg){
+        document.getElementById('tgTok').value=D.tg.token||'';
+        document.getElementById('tgCid').value=D.tg.chatId||'';
+        document.getElementById('tnR').checked=D.tg.notifyReady!==false;
+        document.getElementById('tnM').checked=D.tg.notifyMin!==false;
+        document.getElementById('tnD').checked=!!D.tg.notifyDaily;
+    }
+    updateTGSt();
+}
+function saveTG(){
+    D.tg={token:document.getElementById('tgTok').value.trim(),chatId:document.getElementById('tgCid').value.trim(),notifyReady:document.getElementById('tnR').checked,notifyMin:document.getElementById('tnM').checked,notifyDaily:document.getElementById('tnD').checked};
+    save();updateTGSt();notify('Telegram сохранен!');
+}
+function updateTGSt(){
+    const el=document.getElementById('tgSt');
+    if(D.tg&&D.tg.token&&D.tg.chatId){el.className='tg-ok';el.textContent='✅ Бот подключен'}
+    else{el.className='tg-no';el.textContent='❌ Бот не подключен'}
+}
+async function tgSend(text){
+    if(!D.tg||!D.tg.token||!D.tg.chatId)return;
+    try{await fetch(`https://api.telegram.org/bot${D.tg.token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:D.tg.chatId,text,parse_mode:'Markdown'})})}catch(e){}
+}
+async function testTG(){
+    if(!D.tg||!D.tg.token||!D.tg.chatId){notify('Сначала сохраните настройки','err');return}
+    notify('Отправляю...','info');
+    try{
+        const r=await fetch(`https://api.telegram.org/bot${D.tg.token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:D.tg.chatId,text:`✅ *CryptoHarvest v4.0* подключен!\n\n⚡ BTC + ETH + LTC + SOL\n🤖 АвтоКликер активен\n📅 ${new Date().toLocaleString('ru')}`,parse_mode:'Markdown'})});
+        const d=await r.json();
+        if(d.ok)notify('✅ Telegram работает!');
+        else notify('❌ '+d.description,'err');
+    }catch(e){notify('❌ Ошибка сети','err')}
+}
+function sendReport(){
+    const {BTC:b,ETH:e,LTC:l,SOL:s}=D.earnings;
+    const tot=(b*P.BTC+e*P.ETH+l*P.LTC+s*P.SOL).toFixed(2);
+    const rdy=D.faucets.filter(f=>f.enabled&&isRdy(f)).length;
+    tgSend(`📊 *Отчет CryptoHarvest*\n\n₿ BTC: ${b.toFixed(6)}\nΞ ETH: ${e.toFixed(6)}\nŁ LTC: ${l.toFixed(6)}\n◎ SOL: ${s.toFixed(6)}\n\n💵 Итого: ~$${tot}\n🚰 Готовы к сбору: ${rdy}\n\n📅 ${new Date().toLocaleString('ru')}`);
+    notify('Отчет отправлен!');
+}
+
+// ===MISC===
+function gt(e,id){
+    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+    document.getElementById(id).classList.add('on');
+    document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    if(id==='autoclicker')renderACQueue();
+}
+function expData(){
+    const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cryptoharvest-v4-backup.json';a.click();
+}
+function clearAll(){if(confirm('Очистить все данные? Нельзя отменить!')){localStorage.clear();location.reload()}}
+function notify(msg,type='ok'){
+    const n=document.getElementById('ntf');n.textContent=msg;
+    n.className='ntf ntf-'+type;n.style.display='block';
+    setTimeout(()=>n.style.display='none',2500);
+}
+
+
+// ===FAUCETPAY===
+const FP_FAUCETS = [
+    {name:'FreeBitco.in', url:'https://freebitco.in', crypto:'BTC', pay:'Прямая выплата'},
+    {name:'Moon Bitcoin', url:'https://moonbitcoin.io', crypto:'BTC', pay:'CoinPot/FaucetPay'},
+    {name:'Cointiply', url:'https://cointiply.com', crypto:'BTC', pay:'FaucetPay'},
+    {name:'FireFaucet', url:'https://firefaucet.win', crypto:'BTC/ETH/LTC/SOL', pay:'FaucetPay'},
+    {name:'FaucetCrypto', url:'https://faucetcrypto.com', crypto:'BTC/ETH/LTC', pay:'FaucetPay'},
+    {name:'Dutchy(CORP)', url:'https://dutchycorp.ovh', crypto:'BTC/ETH/LTC', pay:'FaucetPay'},
+    {name:'Coinpayu', url:'https://coinpayu.com', crypto:'BTC/ETH/LTC', pay:'FaucetPay'},
+    {name:'AdBTC', url:'https://adbtc.top', crypto:'BTC', pay:'FaucetPay'},
+    {name:'Moon Litecoin', url:'https://moonlitecoin.com', crypto:'LTC', pay:'CoinPot/FaucetPay'},
+    {name:'Free-Litecoin', url:'https://free-litecoin.com', crypto:'LTC', pay:'FaucetPay'},
+];
+
+function saveFP(){
+    const key = document.getElementById('fpKey').value.trim();
+    if(!key){notify('Введите API ключ','err');return}
+    D.fp = {key, savedAt: Date.now()};
+    save();
+    updateFPStatus(true);
+    notify('FaucetPay сохранен!');
+    fpCheckAll();
+    renderFPFaucets();
+}
+
+function updateFPStatus(ok){
+    const el = document.getElementById('fpSt');
+    if(ok && D.fp && D.fp.key){
+        el.style.cssText = 'background:rgba(0,180,0,.1);border:1px solid rgba(0,180,0,.2);color:#00cc00;padding:10px 14px;border-radius:10px;font-size:.85em;margin-bottom:12px';
+        el.textContent = '✅ FaucetPay подключен';
+    } else {
+        el.style.cssText = 'background:rgba(255,100,0,.08);border:1px solid rgba(255,100,0,.15);color:#ff8844;padding:10px 14px;border-radius:10px;font-size:.85em;margin-bottom:12px';
+        el.textContent = '❌ Не подключен — введите API ключ';
+    }
+}
+
+async function fpCheckBal(currency){
+    if(!D.fp||!D.fp.key) return null;
+    try{
+        const r = await fetch(`https://faucetpay.io/api/v1/balance?api_key=${D.fp.key}&currency=${currency}`);
+        const d = await r.json();
+        if(d.status===200) return d.balance;
+        return null;
+    } catch(e){ return null; }
+}
+
+async function fpCheckAll(){
+    if(!D.fp||!D.fp.key){notify('Сначала сохраните API ключ','err');return}
+    notify('Загружаю балансы...','info');
+    const currencies = ['BTC','ETH','LTC','SOL'];
+    let total = 0;
+    for(const cr of currencies){
+        const el = document.getElementById('fp'+cr);
+        const elU = document.getElementById('fp'+cr+'u');
+        if(el) el.textContent = '⏳';
+        const bal = await fpCheckBal(cr);
+        if(bal !== null){
+            if(el) el.textContent = parseFloat(bal).toFixed(8);
+            const usd = parseFloat(bal) * (P[cr]||0);
+            total += usd;
+            if(elU) elU.textContent = '≈ $'+usd.toFixed(4);
+        } else {
+            if(el) el.textContent = '—';
+            if(elU) elU.textContent = 'ошибка';
+        }
+    }
+    const totEl = document.getElementById('fpTotal');
+    if(totEl) totEl.textContent = '$'+total.toFixed(4);
+    const upd = document.getElementById('fpLastUpdate');
+    if(upd) upd.textContent = 'Обновлено: '+new Date().toLocaleTimeString('ru');
+    updateFPStatus(true);
+    notify('✅ Балансы обновлены!');
+    D.fp.lastCheck = Date.now();
+    save();
+}
+
+async function fpGetHistory(){
+    if(!D.fp||!D.fp.key){notify('Сначала сохраните API ключ','err');return}
+    const cr = document.getElementById('fpHistCr').value;
+    const el = document.getElementById('fpHistory');
+    el.innerHTML = '<p style="color:#888;font-size:.82em">⏳ Загружаю историю '+cr+'...</p>';
+    try{
+        const r = await fetch(`https://faucetpay.io/api/v1/payouthistory?api_key=${D.fp.key}&currency=${cr}`);
+        const d = await r.json();
+        if(d.status===200 && d.data && d.data.length){
+            el.innerHTML = d.data.slice(0,15).map(tx=>`
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,200,0,.05);border-radius:7px;margin-bottom:6px;font-size:.8em">
+                    <div>
+                        <div style="font-weight:bold;color:#00ff88">+${parseFloat(tx.amount).toFixed(8)} ${cr}</div>
+                        <div style="color:#555">${tx.payout_user_username||tx.referral||'Кран'}</div>
+                        <div style="color:#444">${new Date(tx.time*1000).toLocaleString('ru')}</div>
+                    </div>
+                    <div style="color:#888;font-size:.9em">≈ $${(parseFloat(tx.amount)*P[cr]).toFixed(5)}</div>
+                </div>`).join('');
+        } else if(d.status===200){
+            el.innerHTML = '<p style="color:#555;font-size:.82em">История пуста для '+cr+'</p>';
+        } else {
+            el.innerHTML = '<p style="color:#ff6666;font-size:.82em">Ошибка: '+(d.message||'неизвестная')+'</p>';
+        }
+    } catch(e){
+        el.innerHTML = '<p style="color:#ff6666;font-size:.82em">Ошибка запроса к FaucetPay API. Возможно CORS ограничение.</p>';
+    }
+}
+
+function renderFPFaucets(){
+    const el = document.getElementById('fpFaucetList');
+    if(!el) return;
+    el.innerHTML = FP_FAUCETS.map(f=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px;background:rgba(0,212,255,.04);border-radius:8px;margin-bottom:7px;gap:8px">
+            <div style="flex:1">
+                <div style="font-weight:bold;color:#00ff88;font-size:.88em">${f.name}</div>
+                <div style="font-size:.74em;color:#666">${f.url.replace('https://','')}</div>
+                <div style="font-size:.74em;color:#888;margin-top:2px">💳 ${f.pay}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <span style="font-size:.72em;padding:2px 6px;border-radius:6px;background:rgba(0,212,255,.1);color:#00d4ff">${f.crypto}</span>
+                <a href="${f.url}" target="_blank" class="btn bg bsm">🌐</a>
+            </div>
+        </div>`).join('');
+}
+
+function loadFP(){
+    if(D.fp && D.fp.key){
+        document.getElementById('fpKey').value = D.fp.key;
+        updateFPStatus(true);
+        renderFPFaucets();
+    } else {
+        renderFPFaucets();
+    }
+}
+
+// ===TIMERS===
+setInterval(()=>{render()},60000);
+
+// Проверка готовых кранов каждые 5 минут
+setInterval(()=>{
+    if(!D.tg||!D.tg.token||!D.tg.chatId||!D.tg.notifyReady)return;
+    const rdy=D.faucets.filter(f=>f.enabled&&isRdy(f));
+    if(rdy.length>0){
+        const names=rdy.slice(0,5).map(f=>`• ${f.name} [${f.crypto}]`).join('\n');
+        tgSend(`🚰 *Готовы к сбору: ${rdy.length}*\n\n${names}\n\nОткройте CryptoHarvest!`);
+    }
+},5*60*1000);
+
+// ===INIT===
+(function(){
+    const s=localStorage.getItem('ch_s');
+    if(s){const p=JSON.parse(s);showApp(p.nick,p.av)}
+})();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

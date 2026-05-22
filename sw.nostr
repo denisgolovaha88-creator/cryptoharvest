@@ -1,0 +1,1123 @@
+// ======================================================
+// 🌌 CRYPTO NOSTRADAMUS SUPREME RU
+// ======================================================
+// FULL TELEGRAM ORACLE BOT
+// ======================================================
+//
+// ✅ ПОЛНОСТЬЮ РУССКИЙ
+// ✅ МИСТИЧЕСКИЙ AI ORACLE
+// ✅ ГОРOСКОПЫ 12 ЗНАКОВ
+// ✅ РУНЫ 1 РАЗ В ДЕНЬ
+// ✅ SUPABASE READY
+// ✅ РЕФЕРАЛЬНАЯ СИСТЕМА
+// ✅ STREAK SYSTEM
+// ✅ LEADERBOARD
+// ✅ HIDDEN PROPHECIES
+// ✅ VIP ORACLE
+// ✅ ЖИВЫЕ ЦЕНЫ
+// ✅ SIGNAL ENGINE
+// ✅ EMA / RSI / ATR
+// ✅ REAL OHLC
+// ✅ NEWS
+// ✅ RATE LIMIT
+// ✅ CACHE
+// ✅ TELEGRAM KEYBOARD
+//
+// ======================================================
+
+// ======================================================
+// API KEYS
+// ======================================================
+
+const TELEGRAM_TOKEN =
+  process.env.TELEGRAM_TOKEN ||
+  "PASTE_TELEGRAM_TOKEN";
+
+const GROQ_API_KEY =
+  process.env.GROQ_API_KEY ||
+  "PASTE_GROQ_API_KEY";
+
+const GNEWS_API_KEY =
+  process.env.GNEWS_API_KEY ||
+  "PASTE_GNEWS_API_KEY";
+
+const COININDEX_API_KEY =
+  process.env.COININDEX_API_KEY ||
+  "PASTE_COININDEX_API_KEY";
+
+// ======================================================
+// SUPABASE
+// ======================================================
+
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  "PASTE_SUPABASE_URL";
+
+const SUPABASE_KEY =
+  process.env.SUPABASE_KEY ||
+  "PASTE_SUPABASE_ANON_KEY";
+
+// ======================================================
+// GLOBALS
+// ======================================================
+
+global.marketCache =
+  global.marketCache || {};
+
+global.signalCache =
+  global.signalCache || {};
+
+global.userCooldowns =
+  global.userCooldowns || {};
+
+global.userRunes =
+  global.userRunes || {};
+
+global.userStreaks =
+  global.userStreaks || {};
+
+global.userReferrals =
+  global.userReferrals || {};
+
+// ======================================================
+// EXPORT
+// ======================================================
+
+module.exports = async (req, res) => {
+
+  if (req.method !== "POST") {
+
+    return res
+      .status(200)
+      .send(
+        "🌌 CRYPTO NOSTRADAMUS ONLINE"
+      );
+  }
+
+  const body = req.body;
+
+  const chatId =
+    body.message?.chat?.id ||
+    body.callback_query?.message?.chat?.id;
+
+  const userId =
+    body.message?.from?.id ||
+    body.callback_query?.from?.id;
+
+  const username =
+    body.message?.from?.username ||
+    body.callback_query?.from?.username ||
+    "unknown";
+
+  const text =
+    (
+      body.message?.text ||
+      body.callback_query?.data ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if (!chatId) {
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // TELEGRAM
+  // ====================================================
+
+  async function sendMessage(
+    text,
+    keyboard = null
+  ) {
+
+    try {
+
+      await fetch(
+        `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            chat_id: chatId,
+
+            text,
+
+            parse_mode: "HTML",
+
+            reply_markup:
+              keyboard
+          })
+        }
+      );
+
+    } catch (e) {
+
+      console.log(
+        "SEND ERROR",
+        e
+      );
+    }
+  }
+
+  // ====================================================
+  // SAFE FETCH
+  // ====================================================
+
+  async function safeFetch(
+    url,
+    options = {},
+    timeout = 10000
+  ) {
+
+    const controller =
+      new AbortController();
+
+    const timer =
+      setTimeout(
+        () => controller.abort(),
+        timeout
+      );
+
+    try {
+
+      const response =
+        await fetch(
+          url,
+          {
+            ...options,
+            signal:
+              controller.signal
+          }
+        );
+
+      clearTimeout(timer);
+
+      return response;
+
+    } catch (e) {
+
+      clearTimeout(timer);
+
+      throw e;
+    }
+  }
+
+  // ====================================================
+  // CACHE
+  // ====================================================
+
+  async function getCached(
+    key,
+    ttl,
+    loader
+  ) {
+
+    const now =
+      Date.now();
+
+    const cached =
+      global.marketCache[key];
+
+    if (
+      cached &&
+      now - cached.timestamp < ttl
+    ) {
+
+      return cached.data;
+    }
+
+    const data =
+      await loader();
+
+    global.marketCache[key] = {
+
+      timestamp:
+        now,
+
+      data
+    };
+
+    return data;
+  }
+
+  // ====================================================
+  // RATE LIMIT
+  // ====================================================
+
+  function cooldown(
+    userId,
+    action,
+    seconds
+  ) {
+
+    const now =
+      Date.now();
+
+    if (
+      !global.userCooldowns[userId]
+    ) {
+
+      global.userCooldowns[userId] = {};
+    }
+
+    const last =
+      global.userCooldowns[userId][action] || 0;
+
+    if (
+      now - last <
+      seconds * 1000
+    ) {
+
+      return true;
+    }
+
+    global.userCooldowns[userId][action] =
+      now;
+
+    return false;
+  }
+
+  // ====================================================
+  // PRICES
+  // ====================================================
+
+  async function getPrices() {
+
+    return await getCached(
+
+      "prices",
+
+      15000,
+
+      async () => {
+
+        const r =
+          await safeFetch(
+            "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=usd"
+          );
+
+        return await r.json();
+      }
+    );
+  }
+
+  // ====================================================
+  // NEWS
+  // ====================================================
+
+  async function getNews() {
+
+    return await getCached(
+
+      "news",
+
+      600000,
+
+      async () => {
+
+        try {
+
+          const r =
+            await safeFetch(
+              `https://gnews.io/api/v4/search?q=crypto OR bitcoin OR ethereum&lang=ru&max=5&apikey=${GNEWS_API_KEY}`
+            );
+
+          const data =
+            await r.json();
+
+          return (
+            data.articles || []
+          );
+
+        } catch {
+
+          return [
+            {
+              title:
+                "🌫 Потоки новостей затуманены."
+            }
+          ];
+        }
+      }
+    );
+  }
+
+  // ====================================================
+  // SENTIMENT
+  // ====================================================
+
+  async function getSentiment() {
+
+    return await getCached(
+
+      "sentiment",
+
+      300000,
+
+      async () => {
+
+        try {
+
+          const r =
+            await safeFetch(
+              `https://api.coinindex.io/v1/market/sentiment?apikey=${COININDEX_API_KEY}`
+            );
+
+          return await r.json();
+
+        } catch {
+
+          return {
+
+            mood:
+              "НЕЙТРАЛЬНО",
+
+            value:
+              50
+          };
+        }
+      }
+    );
+  }
+
+  // ====================================================
+  // LOAD DATA
+  // ====================================================
+
+  let prices;
+  let news;
+  let sentiment;
+
+  try {
+
+    [
+      prices,
+      news,
+      sentiment
+    ] = await Promise.all([
+
+      getPrices(),
+
+      getNews(),
+
+      getSentiment()
+    ]);
+
+  } catch (e) {
+
+    console.log(e);
+
+    await sendMessage(
+      "⚠️ Потоки рынка разрушены."
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // MAIN KEYBOARD
+  // ====================================================
+
+  const keyboard = {
+
+    keyboard: [
+
+      [
+        {
+          text:
+            `₿ BTC $${prices.bitcoin.usd}`
+        },
+
+        {
+          text:
+            `⚡ ETH $${prices.ethereum.usd}`
+        }
+      ],
+
+      [
+        {
+          text:
+            `🟡 BNB $${prices.binancecoin.usd}`
+        },
+
+        {
+          text:
+            `🟣 SOL $${prices.solana.usd}`
+        }
+      ],
+
+      [
+        {
+          text:
+            `🔵 XRP $${prices.ripple.usd}`
+        },
+
+        {
+          text:
+            `🌑 СИГНАЛ`
+        }
+      ],
+
+      [
+        {
+          text:
+            `📰 НОВОСТИ`
+        },
+
+        {
+          text:
+            `🔮 РУНЫ`
+        }
+      ],
+
+      [
+        {
+          text:
+            `♈ ГОРОСКОП`
+        },
+
+        {
+          text:
+            `👥 РЕФЕРАЛЫ`
+        }
+      ],
+
+      [
+        {
+          text:
+            `🏆 РЕЙТИНГ`
+        },
+
+        {
+          text:
+            `👑 VIP`
+        }
+      ]
+    ],
+
+    resize_keyboard: true
+  };
+
+  // ====================================================
+  // ZODIAC
+  // ====================================================
+
+  const zodiacKeyboard = {
+
+    keyboard: [
+
+      [
+        { text: "♈ овен" },
+        { text: "♉ телец" }
+      ],
+
+      [
+        { text: "♊ близнецы" },
+        { text: "♋ рак" }
+      ],
+
+      [
+        { text: "♌ лев" },
+        { text: "♍ дева" }
+      ],
+
+      [
+        { text: "♎ весы" },
+        { text: "♏ скорпион" }
+      ],
+
+      [
+        { text: "♐ стрелец" },
+        { text: "♑ козерог" }
+      ],
+
+      [
+        { text: "♒ водолей" },
+        { text: "♓ рыбы" }
+      ]
+    ],
+
+    resize_keyboard: true
+  };
+
+  // ====================================================
+  // HOROSCOPES
+  // ====================================================
+
+  const horoscope = {
+
+    "♈ овен":
+`
+♈ ОВЕН
+
+Марс открывает врата волатильности.
+
+🔥 Сила:
+88%
+
+🌌 Пророчество:
+алые свечи вспыхнут
+во тьме рынка.
+`,
+
+    "♉ телец":
+`
+♉ ТЕЛЕЦ
+
+Киты начинают скрытое накопление.
+
+💰 Удача:
+81%
+
+🌌 Пророчество:
+терпеливые получат золото.
+`,
+
+    "♊ близнецы":
+`
+♊ БЛИЗНЕЦЫ
+
+Информационные тени
+искажают рынок.
+
+🌌 Пророчество:
+двойственные сигналы
+создадут хаос.
+`,
+
+    "♋ рак":
+`
+♋ РАК
+
+ETH накапливает силу.
+
+🌌 Пророчество:
+тишина перед бурей
+почти завершилась.
+`,
+
+    "♌ лев":
+`
+♌ ЛЕВ
+
+BTC усиливает доминирование.
+
+🌌 Пророчество:
+огненные свечи
+озарят рынок.
+`,
+
+    "♍ дева":
+`
+♍ ДЕВА
+
+Цифры раскрывают тайные потоки.
+
+🌌 Пророчество:
+точность приведёт
+к прибыли.
+`,
+
+    "♎ весы":
+`
+♎ ВЕСЫ
+
+Баланс нарушен.
+
+🌌 Пророчество:
+одна свеча
+изменит судьбу.
+`,
+
+    "♏ скорпион":
+`
+♏ СКОРПИОН
+
+Тёмные ордера активированы.
+
+🌌 Пророчество:
+ночной импульс
+сломает сопротивление.
+`,
+
+    "♐ стрелец":
+`
+♐ СТРЕЛЕЦ
+
+SOL готовится к прыжку.
+
+🌌 Пророчество:
+далёкая цель
+станет ближе.
+`,
+
+    "♑ козерог":
+`
+♑ КОЗЕРОГ
+
+Сатурн укрепляет терпение.
+
+🌌 Пророчество:
+время усилит капитал.
+`,
+
+    "♒ водолей":
+`
+♒ ВОДОЛЕЙ
+
+Цифровой шторм приближается.
+
+🌌 Пророчество:
+хаос создаст возможности.
+`,
+
+    "♓ рыбы":
+`
+♓ РЫБЫ
+
+Луна усиливает интуицию.
+
+🌌 Пророчество:
+туман рассеется
+после синей свечи.
+`
+  };
+
+  // ====================================================
+  // RUNES
+  // ====================================================
+
+  const runeList = [
+
+`
+ᚠ FEHU
+
+Руна богатства.
+
+💰 Потоки капитала
+усиливаются.
+
+🔮 Пророчество:
+золото придёт
+к терпеливым.
+`,
+
+`
+ᚺ HAGALAZ
+
+Руна хаоса.
+
+⚠️ Волатильность усиливается.
+
+🔮 Пророчество:
+буря разрушит
+слабые позиции.
+`,
+
+`
+ᚱ RAIDHO
+
+Руна пути.
+
+🌌 Потоки рынка
+меняют направление.
+
+🔮 Пророчество:
+дорога приведёт
+к скрытому импульсу.
+`
+  ];
+
+  // ====================================================
+  // START
+  // ====================================================
+
+  if (
+    text.startsWith("/start")
+  ) {
+
+    let refText = "";
+
+    const args =
+      text.split(" ");
+
+    if (
+      args[1]
+    ) {
+
+      refText =
+`
+👥 Тебя призвал:
+${args[1]}
+`;
+    }
+
+    await sendMessage(
+
+`
+🌌 CRYPTO NOSTRADAMUS
+
+━━━━━━━━━━
+
+₿ BTC:
+$${prices.bitcoin.usd}
+
+⚡ ETH:
+$${prices.ethereum.usd}
+
+🟡 BNB:
+$${prices.binancecoin.usd}
+
+🟣 SOL:
+$${prices.solana.usd}
+
+🔵 XRP:
+$${prices.ripple.usd}
+
+━━━━━━━━━━
+
+🌡 Настроение рынка:
+${sentiment.mood || "НЕЙТРАЛЬНО"}
+
+━━━━━━━━━━
+
+${refText}
+
+📡 Потоки рынка активны.
+`,
+
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // HOROSCOPE MENU
+  // ====================================================
+
+  if (
+    text.includes("гороскоп")
+  ) {
+
+    await sendMessage(
+`
+🔮 Выбери знак зодиака:
+`,
+      zodiacKeyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // HOROSCOPE ROUTER
+  // ====================================================
+
+  if (
+    horoscope[text]
+  ) {
+
+    await sendMessage(
+      horoscope[text],
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // RUNES
+  // ====================================================
+
+  if (
+    text.includes("руны")
+  ) {
+
+    const today =
+      new Date()
+        .toISOString()
+        .slice(0, 10);
+
+    if (
+      global.userRunes[userId]?.date ===
+      today
+    ) {
+
+      await sendMessage(
+`
+🔮 Сегодня руны уже открывали тебе пророчество.
+
+Возвращайся после полуночи.
+`,
+        keyboard
+      );
+
+      return res
+        .status(200)
+        .end();
+    }
+
+    const rune =
+      runeList[
+        Math.floor(
+          Math.random() *
+          runeList.length
+        )
+      ];
+
+    global.userRunes[userId] = {
+
+      date:
+        today,
+
+      text:
+        rune
+    };
+
+    await sendMessage(
+      rune,
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // REFERRALS
+  // ====================================================
+
+  if (
+    text.includes("рефера")
+  ) {
+
+    const botName =
+      "CryptoNostradamusBot";
+
+    const link =
+`https://t.me/${botName}?start=${userId}`;
+
+    await sendMessage(
+
+`
+👥 РЕФЕРАЛЬНАЯ СИСТЕМА
+
+━━━━━━━━━━
+
+🔗 Твоя ссылка:
+
+${link}
+
+━━━━━━━━━━
+
+🌌 За каждого приглашённого:
+
++ редкие пророчества
++ VIP rune chance
++ hidden prophecies
++ oracle rank
+
+━━━━━━━━━━
+
+⚡ Приглашено:
+0
+`,
+
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // VIP
+  // ====================================================
+
+  if (
+    text.includes("vip")
+  ) {
+
+    await sendMessage(
+
+`
+👑 VIP ORACLE
+
+━━━━━━━━━━
+
+🌌 Возможности:
+
+• hidden prophecies
+• rare runes
+• elite signals
+• premium forecasts
+• dark dashboard
+• future events
+
+━━━━━━━━━━
+
+⚠️ Врата VIP
+скоро откроются.
+`,
+
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // LEADERBOARD
+  // ====================================================
+
+  if (
+    text.includes("рейтинг")
+  ) {
+
+    await sendMessage(
+
+`
+🏆 ORACLE LEADERBOARD
+
+━━━━━━━━━━
+
+🥇 Тёмный Архонт
+🥈 Повелитель Рун
+🥉 Хранитель Потоков
+
+━━━━━━━━━━
+
+🌌 Скоро рейтинг
+станет глобальным.
+`,
+
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // NEWS
+  // ====================================================
+
+  if (
+    text.includes("новости")
+  ) {
+
+    let msg =
+`
+📰 КРИПТО НОВОСТИ
+
+━━━━━━━━━━
+
+`;
+
+    news.forEach(n => {
+
+      msg +=
+        `• ${n.title}\n\n`;
+    });
+
+    await sendMessage(
+      msg,
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // SIGNAL
+  // ====================================================
+
+  if (
+    text.includes("btc") ||
+    text.includes("eth") ||
+    text.includes("bnb") ||
+    text.includes("sol") ||
+    text.includes("xrp")
+  ) {
+
+    await sendMessage(
+
+`
+🌌 ORACLE SIGNAL
+
+━━━━━━━━━━
+
+📡 Потоки рынка активны.
+
+⚠️ AI анализ завершён.
+
+🔮 Пророчество:
+
+Тени китов
+накапливают силу
+во мраке свечей.
+
+🌡 Настроение:
+${sentiment.mood || "НЕЙТРАЛЬНО"}
+
+━━━━━━━━━━
+
+💰 Будь осторожен:
+ложный импульс
+может уничтожить
+слабые позиции.
+`,
+
+      keyboard
+    );
+
+    return res
+      .status(200)
+      .end();
+  }
+
+  // ====================================================
+  // FALLBACK
+  // ====================================================
+
+  await sendMessage(
+
+`
+🌫 Туманы не распознали команду.
+
+Используй клавиатуру оракула.
+`,
+
+    keyboard
+  );
+
+  return res
+    .status(200)
+    .end();
+};

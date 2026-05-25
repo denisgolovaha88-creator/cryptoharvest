@@ -24,7 +24,7 @@
 
 const TELEGRAM_TOKEN =
   process.env.TELEGRAM_TOKEN ||
-  "8821653271:AAEHIe7QhmcOOjxQFJ6DT5WPjZU9hczuVP8";
+  "                    ";
 
 const GROQ_API_KEY =
   process.env.GROQ_API_KEY ||

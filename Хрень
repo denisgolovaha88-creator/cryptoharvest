@@ -1065,7 +1065,40 @@ G('zodiacResult').style.display='block';
 G('zodiacText').innerHTML='⏳ Формирование пророчества...';
 
 try{
-const txt=await askAI('Создай мистический криптогороскоп для '+z);
+const txt = await askAI(`
+
+Создай КРИПТОГОРОСКОП для знака зодиака ${z}.
+
+Формат ответа:
+
+♇ Настроение крипторынка:
+...
+
+₿ Главная монета дня:
+...
+
+📈 Где возможен рост:
+...
+
+⚠ Что сегодня опасно:
+...
+
+✨ Энергия прибыли:
+...
+
+🔮 Совет трейдеру:
+...
+
+Правила:
+- Пиши как древний крипто-оракул
+- Используй мистический стиль
+- Связывай прогноз с крипторынком
+- Упоминай BTC, ETH, SOL и другие монеты
+- Не пиши обычный гороскоп
+- Не пиши слишком длинно
+- Делай атмосферно и красиво
+
+`);
 G('zodiacText').innerHTML='<div style="line-height:1.8">'+txt+'</div>';
 }catch(e){
 G('zodiacText').innerHTML='❌ Ошибка';
@@ -1329,7 +1362,7 @@ border:1px solid rgba(168,85,247,.2);
 >
 
 <div
-id="bigRune"
+id="runeSymbolBig"
 style="
 font-size:90px;
 margin-bottom:14px;
@@ -1340,7 +1373,7 @@ text-shadow:0 0 30px #a855f7;
 </div>
 
 <div
-id="bigRuneName"
+id="runeName"
 style="
 font-size:30px;
 font-weight:700;
@@ -1443,21 +1476,25 @@ document.getElementById(
 'runeResultBox'
 ).style.display='block';
 
-document.getElementById(
-'bigRune'
-).textContent=r[0];
+const runeEl =
+document.getElementById('runeSymbolBig');
+
+runeEl.style.fontFamily =
+'"Segoe UI Symbol","Noto Sans Runic","Symbola",serif';
+
+runeEl.textContent = r[0];
 
 document.getElementById(
-'bigRuneName'
-).textContent=r[1];
+'runeName'
+).textContent = r[1];
 
 document.getElementById(
 'bigRuneTitle'
-).textContent=r[2];
+).textContent = r[2];
 
 document.getElementById(
 'bigRuneText'
-).textContent=r[3];
+).textContent = r[3];
 
 }
 

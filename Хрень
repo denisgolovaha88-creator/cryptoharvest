@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru" translate="no">
 <head>
@@ -955,7 +954,7 @@ headers:{
 'Authorization':'Bearer '+key
 },
 body:JSON.stringify({
-model:'llama3-8b-8192',
+model:'llama-3.1-8b-instant',
 messages:[
 {
 role:'system',
@@ -975,8 +974,6 @@ max_tokens:500
 const data=await r.json();
 
 console.log(data);
-  
-alert(JSON.stringify(data));
   
 if (!r.ok) {
 
@@ -1210,7 +1207,7 @@ const FULL_RUNES=[
 ['ᛖ','Эваз','Движение','Изменения уже близко.'],
 ['ᛗ','Манназ','Разум','Доверяй холодному анализу.'],
 ['ᛚ','Лагуз','Поток','Интуиция сейчас особенно сильна.'],
-['ᛜ','Ингуз','Завершение','Один цикл заканчивается.'],
+['ᛜ','Ингваз','Завершение','Один цикл заканчивается.'],
 ['ᛞ','Дагаз','Свет','Наступает переломный момент.'],
 ['ᛟ','Одал','Наследие','Старые активы снова станут ценными.']
 
@@ -1282,17 +1279,38 @@ color:#ddd6fe;
 letter-spacing:3px;
 "
 >
-⚔ ВЫБЕРИТЕ РУНУ ⚔
+⚔ ВЫТЯНУТЬ РУНУ ⚔
 </div>
 
 <div
-id="runeRoomGrid"
 style="
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:12px;
+display:flex;
+justify-content:center;
 "
-></div>
+>
+
+<button
+id="drawRuneBtn"
+style="
+width:220px;
+height:120px;
+border:none;
+border-radius:28px;
+font-size:22px;
+cursor:pointer;
+color:#fff;
+background:
+linear-gradient(135deg,
+rgba(91,33,182,.45),
+rgba(17,24,39,.95));
+border:1px solid rgba(168,85,247,.35);
+box-shadow:0 0 30px rgba(168,85,247,.25);
+"
+>
+🎲 ВЫТЯНУТЬ
+</button>
+
+</div>
 
 <div
 id="runeResultBox"
@@ -1313,7 +1331,7 @@ border:1px solid rgba(168,85,247,.2);
 <div
 id="bigRune"
 style="
-font-size:80px;
+font-size:90px;
 margin-bottom:14px;
 text-shadow:0 0 30px #a855f7;
 "
@@ -1324,8 +1342,9 @@ text-shadow:0 0 30px #a855f7;
 <div
 id="bigRuneName"
 style="
-font-size:28px;
+font-size:30px;
 font-weight:700;
+color:#f8d58d;
 "
 >
 Феху
@@ -1355,6 +1374,17 @@ font-size:15px;
 ...
 </div>
 
+<div
+id="runeTimer"
+style="
+margin-top:20px;
+font-size:13px;
+color:#c084fc;
+"
+>
+Новая руна будет доступна завтра
+</div>
+
 </div>
 
 </div>
@@ -1368,59 +1398,28 @@ document.getElementById('closeRuneRoom').onclick=()=>{
 modal.remove();
 };
 
-const grid=document.getElementById('runeRoomGrid');
-
 const today=new Date().toDateString();
 
 const pulled=localStorage.getItem('daily_rune_day');
 
 const saved=localStorage.getItem('daily_rune_data');
 
-FULL_RUNES.forEach((r,index)=>{
-
-const b=document.createElement('button');
-
-b.style.cssText=`
-height:74px;
-border:none;
-border-radius:20px;
-font-size:32px;
-cursor:pointer;
-color:#fff;
-background:
-linear-gradient(135deg,
-rgba(91,33,182,.35),
-rgba(17,24,39,.92));
-border:1px solid rgba(168,85,247,.25);
-box-shadow:0 0 18px rgba(0,0,0,.35);
-`;
-
-b.innerHTML='❖';
+document.getElementById('drawRuneBtn').onclick=()=>{
 
 if(pulled===today && saved){
 
 const data=JSON.parse(saved);
 
-if(data.index===index){
+showRuneResult(data.rune);
 
-b.innerHTML=r[0];
+return;
 
 }
 
-b.onclick=()=>{
-
-showRuneResult(data.rune);
-
-};
-
-}else{
-
-b.onclick=()=>{
-
-const data={
-index:index,
-rune:r
-};
+const randomRune=
+FULL_RUNES[
+Math.floor(Math.random()*FULL_RUNES.length)
+];
 
 localStorage.setItem(
 'daily_rune_day',
@@ -1429,20 +1428,14 @@ today
 
 localStorage.setItem(
 'daily_rune_data',
-JSON.stringify(data)
+JSON.stringify({
+rune:randomRune
+})
 );
 
-showRuneResult(r);
-
-b.innerHTML=r[0];
+showRuneResult(randomRune);
 
 };
-
-}
-
-grid.appendChild(b);
-
-});
 
 function showRuneResult(r){
 
@@ -1470,7 +1463,7 @@ document.getElementById(
 
 }
 
-G('runeBtn').onclick=openRuneRoom; 
+G('runeBtn').onclick=openRuneRoom;
 if(getKey()){
 start();
 }
